@@ -1,6 +1,6 @@
 import math
 
-class FormulaClay:
+class FormulaLiquid:
     def __init__(self):
         self.type_sol = None
         self.pores_sol = None
@@ -37,7 +37,7 @@ class FormulaClay:
         return self.r15*base**exponent
 
     def formula12(self):
-        numerator = ((0.0018 * self.type_sol - 0.099) * math.log10(self.r13) + 0.0007 * self.type_sol - 0.053)
+        numerator = ((0.0035 * self.type_sol - 0.018) * math.log10(self.r13) + 0.0019 * self.type_sol - 0.099)
         denominator = 0.30
         exponent = numerator / denominator
         self.r12 = 10 ** exponent
@@ -51,14 +51,14 @@ class FormulaClay:
         self.r13 = numerator / denominator
 
     def formula14(self):
-        numerator = self.r12 - 0.0049 * self.type_sol -0.82
-        denominator = -0.00063 * self.type_sol - 0.06
+        numerator = self.r12 - 0.014 * self.type_sol - 0.42
+        denominator = -0.0014 * self.type_sol - 0.012
         exponent = numerator / denominator
         self.r14 = 2 * math.exp(exponent)
 
     def formula15(self):
-        exponent = -0.077 * self.type_sol + (-0.05 * self.type_sol + 20.5) * self.r12
-        self.r15 = 1.1 * (10 ** (-12)) * math.exp(exponent)
+        exponent = -0.25 * self.type_sol + (0.08 * self.type_sol + 12.85) * self.r12
+        self.r15 = 1.3 * (10 ** (-8)) * math.exp(exponent)
 
     def formula16(self):
         self.r16 = 0.74 * math.log(self.r12) + 0.22

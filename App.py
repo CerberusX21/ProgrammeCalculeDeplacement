@@ -6,8 +6,9 @@ from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
 import sys
 
-import FormulaClay
 from FormulaClay import FormulaClay
+from FormulaD50ff import FormulaD50ff
+from FormulaLiquid import FormulaLiquid
 
 class Window(QWidget):
     def __init__(self):
@@ -77,7 +78,7 @@ class Window(QWidget):
                 color: #0d6efd;
                 min-height: 40px;
                 max-height: 40px;
-                qproperty-alignment: 'AlignCenter';
+                qproperty-alignment: 'AlignLeft';
             }
         """)
 
@@ -110,7 +111,6 @@ class Window(QWidget):
         self.calculate_button.clicked.connect(self.calculate)
         self.calculate_button.setCursor(Qt.CursorShape.PointingHandCursor)
 
-        # Use a QFormLayout to align all fields
         form_layout = QFormLayout()
         form_layout.setSpacing(15)
 
@@ -119,7 +119,6 @@ class Window(QWidget):
         form_layout.addRow("Parametre de compress:", self._wrap(self.compress_input, self.compress_sol))
         form_layout.addRow("Parametre de type Gs:", self.density_input)
 
-        # Button centered
         button_row = QHBoxLayout()
         button_row.addSpacerItem(QSpacerItem(20, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
         button_row.addWidget(self.calculate_button)
@@ -143,7 +142,9 @@ class Window(QWidget):
         return container
 
     def calculate(self):
-        formula = FormulaClay()
+        formula_Clay = FormulaClay()
+        formula_liquid = FormulaLiquid()
+        formula_D50ff = FormulaD50ff()
         try:
             type_sol_data = float(self.type_sol_input.text())
             pores_sol_data = float(self.pores_input.text())
@@ -152,9 +153,33 @@ class Window(QWidget):
         except ValueError:
             QMessageBox.warning(self, "Erreur", "Veuillez entrer des valeurs numériques valides.")
             return
-        if self.type_sol.currentText() == "clay%" and self.pores_sol.currentText() == "W" and self.compress_sol.currentText() == "σ′v":
-            result = formula.calculate_clay_eau(type_sol_data, pores_sol_data, compress_sol_data, density_sol_data)
-            self.result_label.setText(f"Résultat :  {result}")
+        water = self.pores_sol.currentText() == "W"
+        if self.type_sol.currentText() == "clay%":
+            if water:
+                result = formula_Clay.calculate(type_sol_data, pores_sol_data, compress_sol_data, density_sol_data, water)
+                self.result_label.setText(f"Résultat :  {result}")
+
+            else:
+                result = formula_Clay.calculate(type_sol_data, pores_sol_data, compress_sol_data, density_sol_data, water)
+                self.result_label.setText(f"Résultat :  {result}")
+
+        if self.type_sol.currentText() == "wL":
+            if water:
+                result = formula_liquid.calculate(type_sol_data, pores_sol_data, compress_sol_data, density_sol_data, water)
+                self.result_label.setText(f"Résultat :  {result}")
+
+            else:
+                result = formula_liquid.calculate(type_sol_data, pores_sol_data, compress_sol_data, density_sol_data, water)
+                self.result_label.setText(f"Résultat :  {result}")
+
+        if self.type_sol.currentText() == "d50ff":
+            if water:
+                result = formula_D50ff.calculate(type_sol_data, pores_sol_data, compress_sol_data, density_sol_data, water)
+                self.result_label.setText(f"Résultat :  {result}")
+
+            else:
+                result = formula_D50ff.calculate(type_sol_data, pores_sol_data, compress_sol_data, density_sol_data, water)
+                self.result_label.setText(f"Résultat :  {result}")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
