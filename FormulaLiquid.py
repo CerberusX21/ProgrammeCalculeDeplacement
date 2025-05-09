@@ -1,5 +1,8 @@
 import math
 
+from PyQt6.QtWidgets import QMessageBox
+
+
 class FormulaLiquid:
     def __init__(self):
         self.type_sol = None
@@ -20,16 +23,19 @@ class FormulaLiquid:
         self.compress_sol = compression
         self.density_sol = density
 
-        if is_water:
-            self.formula13a()
-        else:
-            self.formula13b()
-        self.formula12()
-        self.formula14()
-        self.formula15()
-        self.formula16()
-        self.formula17()
-        return self.formula11()
+        try:
+            if is_water:
+                self.formula13a()
+            else:
+                self.formula13b()
+            self.formula12()
+            self.formula14()
+            self.formula15()
+            self.formula16()
+            self.formula17()
+            return self.formula11()
+        except (ZeroDivisionError, OverflowError) as e:
+            raise e
 
     def formula11(self):
         exponent = -(self.r16/self.r17)

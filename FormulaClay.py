@@ -1,5 +1,8 @@
 import math
 
+from PyQt6.QtWidgets import QMessageBox
+
+
 class FormulaClay:
     def __init__(self):
         self.type_sol = None
@@ -12,6 +15,7 @@ class FormulaClay:
         self.r15 = None
         self.r16 = None
         self.r17 = None
+        self.result = None
 
     def calculate(self, clay, water, compression, density, is_water):
 
@@ -20,21 +24,27 @@ class FormulaClay:
         self.compress_sol = compression
         self.density_sol = density
 
-        if is_water:
-            self.formula13a()
-        else:
-            self.formula13b()
-        self.formula12()
-        self.formula14()
-        self.formula15()
-        self.formula16()
-        self.formula17()
-        return self.formula11()
+
+        try:
+            if is_water:
+                self.formula13a()
+            else:
+                self.formula13b()
+            self.formula12()
+            self.formula14()
+            self.formula15()
+            self.formula16()
+            self.formula17()
+            self.formula11()
+        except (ZeroDivisionError, OverflowError) as e:
+            raise e
+
+        return self.result
 
     def formula11(self):
-        exponent = -(self.r16/self.r17)
-        base = self.density_sol/self.r14
-        return self.r15*base**exponent
+            exponent = -(self.r16/self.r17)
+            base = self.density_sol/self.r14
+            self.result = self.r15*base**exponent
 
     def formula12(self):
         numerator = ((0.0018 * self.type_sol - 0.099) * math.log10(self.r13) + 0.0007 * self.type_sol - 0.053)
@@ -65,3 +75,4 @@ class FormulaClay:
 
     def formula17(self):
         self.r17 = 0.30 * math.log(self.r12) + 0.12
+

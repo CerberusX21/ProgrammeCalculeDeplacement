@@ -142,44 +142,36 @@ class Window(QWidget):
         return container
 
     def calculate(self):
-        formula_Clay = FormulaClay()
-        formula_liquid = FormulaLiquid()
-        formula_D50ff = FormulaD50ff()
         try:
-            type_sol_data = float(self.type_sol_input.text())
-            pores_sol_data = float(self.pores_input.text())
-            compress_sol_data = float(self.compress_input.text())
-            density_sol_data = float(self.density_input.text())
+            data = {
+                'type_sol': float(self.type_sol_input.text()),
+                'pores_sol': float(self.pores_input.text()),
+                'compress_sol': float(self.compress_input.text()),
+                'density_sol': float(self.density_input.text()),
+                'water': self.pores_sol.currentText() == "W",
+                'type': self.type_sol.currentText()
+            }
         except ValueError:
             QMessageBox.warning(self, "Erreur", "Veuillez entrer des valeurs numériques valides.")
             return
-        water = self.pores_sol.currentText() == "W"
-        if self.type_sol.currentText() == "clay%":
-            if water:
-                result = formula_Clay.calculate(type_sol_data, pores_sol_data, compress_sol_data, density_sol_data, water)
-                self.result_label.setText(f"Résultat :  {result}")
 
-            else:
-                result = formula_Clay.calculate(type_sol_data, pores_sol_data, compress_sol_data, density_sol_data, water)
-                self.result_label.setText(f"Résultat :  {result}")
+        formulas = {
+            "clay%": FormulaClay(),
+            "wL": FormulaLiquid(),
+            "d50ff": FormulaD50ff()
+        }
 
-        if self.type_sol.currentText() == "wL":
-            if water:
-                result = formula_liquid.calculate(type_sol_data, pores_sol_data, compress_sol_data, density_sol_data, water)
-                self.result_label.setText(f"Résultat :  {result}")
+        formula = formulas.get(data['type'])
 
-            else:
-                result = formula_liquid.calculate(type_sol_data, pores_sol_data, compress_sol_data, density_sol_data, water)
-                self.result_label.setText(f"Résultat :  {result}")
-
-        if self.type_sol.currentText() == "d50ff":
-            if water:
-                result = formula_D50ff.calculate(type_sol_data, pores_sol_data, compress_sol_data, density_sol_data, water)
-                self.result_label.setText(f"Résultat :  {result}")
-
-            else:
-                result = formula_D50ff.calculate(type_sol_data, pores_sol_data, compress_sol_data, density_sol_data, water)
-                self.result_label.setText(f"Résultat :  {result}")
+        try:
+            result = formula.calculate(
+                data['type_sol'], data['pores_sol'],
+                data['compress_sol'], data['density_sol'],
+                data['water']
+            )
+            self.result_label.setText(f"Résultat :  {result}")
+        except ValueError as e:
+            QMessageBox.critical(self, "Erreur", f"Une erreur de calcul de formula non valide.\n {e}")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
