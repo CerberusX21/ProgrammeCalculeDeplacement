@@ -1,8 +1,5 @@
 import math
 
-from PyQt6.QtWidgets import QMessageBox
-
-
 class FormulaD50ff:
     def __init__(self):
         self.type_sol = None
