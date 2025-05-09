@@ -40,7 +40,7 @@ class FormulaClay:
 
     def formula11(self):
             exponent = -(self.r16/self.r17)
-            base = self.density_sol/self.r14
+            base = self.compress_sol/self.r14
             self.result = self.r15*base**exponent
 
     def formula12(self):
