@@ -14,7 +14,6 @@ class FormulaLiquid:
         self.r17 = None
 
     def calculate(self, clay, water, compression, density, is_water):
-
         self.type_sol = clay
         self.pores_sol = water
         self.compress_sol = compression
@@ -30,9 +29,11 @@ class FormulaLiquid:
             self.formula15()
             self.formula16()
             self.formula17()
-            return self.formula11()
+            self.formula11()
         except (ZeroDivisionError, OverflowError) as e:
             raise e
+
+        return self.result
 
     def formula11(self):
         exponent = -(self.r16/self.r17)

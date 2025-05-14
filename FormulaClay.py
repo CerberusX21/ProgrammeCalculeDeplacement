@@ -14,19 +14,19 @@ class FormulaClay:
         self.r17 = None
         self.result = None
 
-    def calculate(self, clay, water, compression, density, is_water):
-
+    def calculate(self, clay, water, compression, density, pore_style):
         self.type_sol = clay
         self.pores_sol = water
         self.compress_sol = compression
         self.density_sol = density
 
-
         try:
-            if is_water:
+            if pore_style == "W":
                 self.formula13a()
-            else:
+            elif pore_style == "ρf":
                 self.formula13b()
+            elif pore_style == "ef*":
+                self.formula13c()
             self.formula12()
             self.formula14()
             self.formula15()
@@ -36,7 +36,7 @@ class FormulaClay:
         except (ZeroDivisionError, OverflowError) as e:
             raise e
 
-        return self.result
+        return self.result, self.r13
 
     def formula11(self):
             exponent = -(self.r16/self.r17)
@@ -56,6 +56,9 @@ class FormulaClay:
         numerator = self.density_sol - self.pores_sol
         denominator = self.pores_sol - 0.9174
         self.r13 = numerator / denominator
+
+    def formula13c(self):
+        self.r13 = self.pores_sol/1.09
 
     def formula14(self):
         numerator = self.r12 - 0.0049 * self.type_sol -0.82
