@@ -1,9 +1,11 @@
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QComboBox,
-    QLabel, QPushButton, QMessageBox, QSpacerItem, QSizePolicy, QFormLayout
+    QLabel, QPushButton, QMessageBox, QSpacerItem, QSizePolicy, QFormLayout, QGroupBox, QCheckBox, QSlider, QTabWidget
 )
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import sys
 
 from FormulaClay import FormulaClay
@@ -14,7 +16,7 @@ class Window(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Soil Analysis Tool")
-        self.resize(700, 450)
+        self.resize(1200, 500)
 
         self.setStyleSheet("""
             QWidget {
@@ -26,7 +28,6 @@ class Window(QWidget):
             QLabel {
                 font-weight: 600;
                 color: #333;
-                font-size: 14px;
             }
             QLineEdit, QComboBox {
                 background-color: #ffffff;
@@ -86,8 +87,13 @@ class Window(QWidget):
         self.master_layout.setSpacing(15)
         self.master_layout.setContentsMargins(40, 30, 40, 30)
 
-        self.result_label = QLabel("Résultat : ")
-        self.result_label.setObjectName("ResultLabel")
+        self.col1 = QVBoxLayout()
+        self.col2 = QVBoxLayout()
+
+        self.tabs = QTabWidget()
+
+        self.hydraulique_tab = QWidget()
+        hydraulique_form = QFormLayout()
 
         self.type_sol_input = QLineEdit()
         self.type_sol_input.setPlaceholderText("Valeur...")
@@ -107,28 +113,45 @@ class Window(QWidget):
         self.density_input = QLineEdit()
         self.density_input.setPlaceholderText("Valeur...")
 
+        hydraulique_form.addRow("Type de sol :", self._wrap(self.type_sol_input, self.type_sol))
+        hydraulique_form.addRow("Type de pores :", self._wrap(self.pores_input, self.pores_sol))
+        hydraulique_form.addRow("Compression :", self._wrap(self.compress_input, self.compress_sol))
+        hydraulique_form.addRow("Type Gs :", self.density_input)
+
+        self.hydraulique_tab.setLayout(hydraulique_form)
+
+        self.tassement_tab = QWidget()
+        tassement_form = QFormLayout()
+        self.tassement_tab.setLayout(tassement_form)
+
+        self.tabs.addTab(self.hydraulique_tab, "Conductivité hydraulique")
+        self.tabs.addTab(self.tassement_tab, "Tassement")
+
+        self.result_label = QLabel("Résultat :")
+        self.result_label.setObjectName("ResultLabel")
+
         self.calculate_button = QPushButton("Calculer")
         self.calculate_button.clicked.connect(self.calculate)
-        self.calculate_button.setCursor(Qt.CursorShape.PointingHandCursor)
 
-        form_layout = QFormLayout()
-        form_layout.setSpacing(15)
+        self.button_row = QHBoxLayout()
+        self.button_row.addSpacerItem(QSpacerItem(20, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
+        self.button_row.addWidget(self.calculate_button)
+        self.button_row.addSpacerItem(QSpacerItem(20, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
 
-        form_layout.addRow("Parametre de type de sol:", self._wrap(self.type_sol_input, self.type_sol))
-        form_layout.addRow("Parametre de type de pores:", self._wrap(self.pores_input, self.pores_sol))
-        form_layout.addRow("Parametre de compress:", self._wrap(self.compress_input, self.compress_sol))
-        form_layout.addRow("Parametre de type Gs:", self.density_input)
+        self.figure = plt.figure()
+        self.canvas = FigureCanvas(self.figure)
 
-        button_row = QHBoxLayout()
-        button_row.addSpacerItem(QSpacerItem(20, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
-        button_row.addWidget(self.calculate_button)
-        button_row.addSpacerItem(QSpacerItem(20, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
+        self.col1.addWidget(self.tabs)
+        self.col1.addLayout(self.button_row)
+        self.col1.addWidget(self.result_label)
 
-        self.master_layout.addLayout(form_layout)
-        self.master_layout.addLayout(button_row)
-        self.master_layout.addSpacing(10)
-        self.master_layout.addWidget(self.result_label)
+        self.col2.addWidget(self.canvas)
 
+        row_layout = QHBoxLayout()
+        row_layout.addLayout(self.col1, 30)
+        row_layout.addLayout(self.col2, 70)
+
+        self.master_layout.addLayout(row_layout)
         self.setLayout(self.master_layout)
 
     def _wrap(self, widget1, widget2):
@@ -142,6 +165,16 @@ class Window(QWidget):
         return container
 
     def calculate(self):
+        current_tab = self.tabs.currentIndex()
+        if current_tab == 0:
+            self.calculate_hydraulique()
+        elif current_tab == 1:
+            self.calculate_tassement()
+
+    def calculate_tassement(self):
+        QMessageBox.information(self, "Non implémenté", "Le calcul de tassement n’est pas encore implémenté.")
+
+    def calculate_hydraulique(self):
         try:
             data = {
                 'type_sol': float(self.type_sol_input.text()),
