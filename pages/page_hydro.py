@@ -1,3 +1,5 @@
+from multiprocessing.reduction import register
+
 from PyQt6.QtWidgets import QWidget, QFormLayout, QLineEdit, QComboBox, QCheckBox
 from PyQt6.QtCore import Qt
 
@@ -96,7 +98,7 @@ class HydroPage(QWidget):
         Ck = float(self.result_Ck_input.text()) if self.result_Ck_input.isEnabled() else None
 
         try:
-            result, EI, Cc, Ck = formula.calculate(
+            result, EI, Cc, Ck, E0, σ0, kv0, σv = formula.calculate(
                 data['type_sol'], data['pores_sol'],
                 data['compress_sol'], data['density_sol'],
                 data['water'],
@@ -106,11 +108,11 @@ class HydroPage(QWidget):
             self.result_EI_input.setText(str(EI))
             self.result_Cc_input.setText(str(Cc))
             self.result_Ck_input.setText(str(Ck))
+            return self.register(result, EI, Cc, Ck, E0, σ0, kv0, σv)
         except Exception as e:
             result_label.setText(f"Erreur de calcul : {e}")
 
     def reset(self):
-        # QLineEdit — vider les champs
         self.type_sol_input.clear()
         self.pores_input.clear()
         self.compress_input.clear()
@@ -119,7 +121,6 @@ class HydroPage(QWidget):
         self.result_Cc_input.clear()
         self.result_Ck_input.clear()
 
-        # QComboBox — remettre à l'index 0
         self.type_sol.setCurrentIndex(0)
         self.type_sol_unit.setCurrentIndex(0)
         self.pores_sol.setCurrentIndex(0)
@@ -127,12 +128,13 @@ class HydroPage(QWidget):
         self.compress_sol.setCurrentIndex(0)
         self.compress_sol_unit.setCurrentIndex(0)
 
-        # QCheckBox — décocher
         self.result_EI_check.setChecked(False)
         self.result_Cc_check.setChecked(False)
         self.result_Ck_check.setChecked(False)
 
-        # désactiver les champs de résultats manuels
         self.result_EI_input.setEnabled(False)
         self.result_Cc_input.setEnabled(False)
         self.result_Ck_input.setEnabled(False)
+
+    def register(self, result, EI, Cc, Ck, E0, σ0, kv0, σv):
+        return {"result": result, "Ei": EI, "Cc": Cc, "Ck": Ck, "E0": E0, "σ0": σ0, "kv0": kv0, "σv": σv}

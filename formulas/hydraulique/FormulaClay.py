@@ -6,25 +6,26 @@ class FormulaClay:
         self.pores_sol = None
         self.compress_sol = None
         self.density_sol = None
-        self.r12 = None
-        self.r13 = None
-        self.r14 = None
-        self.r15 = None
-        self.r16 = None
-        self.r17 = None
+        self.σv = None
+        self.E0 = None
+        self.Ei = None
+        self.σ0 = None
+        self.kv0 = None
+        self.Cc = None
+        self.Ck = None
         self.result = None
 
     def calculate(self, clay, water, compression, density, pore_style, Ei=None, Cc=None, Ck=None):
         self.type_sol = clay
         self.pores_sol = water
-        self.compress_sol = compression
+        self.compress_sol = self.σv = compression
         self.density_sol = density
-        self.r13 = Ei
-        self.r16 = Cc
-        self.r17 = Ck
+        self.Ei = Ei
+        self.Cc = Cc
+        self.Ck = Ck
 
         try:
-            if self.r13 == None:
+            if self.Ei == None:
                 if pore_style == "W":
                     self.formula13a()
                 elif pore_style == "ρf":
@@ -34,50 +35,50 @@ class FormulaClay:
             self.formula12()
             self.formula14()
             self.formula15()
-            if self.r16 == None:
+            if self.Cc == None:
                 self.formula16()
-            if self.r17 == None:
+            if self.Ck == None:
                 self.formula17()
             self.formula11()
         except (ZeroDivisionError, OverflowError) as e:
             raise e
 
-        return self.result, self.r13, self.r16, self.r17
+        return self.result, self.Ei, self.Cc, self.Ck, self.E0, self.σ0, self.kv0, self.σv
 
     def formula11(self):
-            exponent = -(self.r16/self.r17)
-            base = self.compress_sol/self.r14
-            self.result = self.r15*base**exponent
+            exponent = -(self.Cc / self.Ck)
+            base = self.compress_sol/self.σ0
+            self.result = self.kv0 * base ** exponent
 
     def formula12(self):
-        numerator = ((0.0018 * self.type_sol - 0.099) * math.log10(self.r13) + 0.0007 * self.type_sol - 0.053)
+        numerator = ((0.0018 * self.type_sol - 0.099) * math.log10(self.Ei) + 0.0007 * self.type_sol - 0.053)
         denominator = 0.30
         exponent = numerator / denominator
-        self.r12 = 10 ** exponent
+        self.E0 = 10 ** exponent
 
     def formula13a(self):
-        self.r13 = 0.01*self.pores_sol*self.density_sol
+        self.Ei = 0.01 * self.pores_sol * self.density_sol
 
     def formula13b(self):
         numerator = self.density_sol - self.pores_sol
         denominator = self.pores_sol - 0.9174
-        self.r13 = numerator / denominator
+        self.Ei = numerator / denominator
 
     def formula13c(self):
-        self.r13 = self.pores_sol/1.09
+        self.Ei = self.pores_sol / 1.09
 
     def formula14(self):
-        numerator = self.r12 - 0.0049 * self.type_sol -0.82
+        numerator = self.E0 - 0.0049 * self.type_sol - 0.82
         denominator = -0.00063 * self.type_sol - 0.06
         exponent = numerator / denominator
-        self.r14 = 2 * math.exp(exponent)
+        self.σ0 = 2 * math.exp(exponent)
 
     def formula15(self):
-        exponent = -0.077 * self.type_sol + (-0.05 * self.type_sol + 20.5) * self.r12
-        self.r15 = 1.1 * (10 ** (-12)) * math.exp(exponent)
+        exponent = -0.077 * self.type_sol + (-0.05 * self.type_sol + 20.5) * self.E0
+        self.kv0 = 1.1 * (10 ** (-12)) * math.exp(exponent)
 
     def formula16(self):
-        self.r16 = 0.74 * math.log(self.r12) + 0.22
+        self.Cc = 0.74 * math.log(self.E0) + 0.22
 
     def formula17(self):
-        self.r17 = 0.30 * math.log(self.r12) + 0.12
+        self.Ck = 0.30 * math.log(self.E0) + 0.12

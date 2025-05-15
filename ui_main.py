@@ -1,16 +1,16 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QSpacerItem, QSizePolicy, QTabWidget
-from PyQt6.QtCore import Qt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-import matplotlib.pyplot as plt
 
 from pages.page_hydro import HydroPage
 from pages.page_tassement import TassementPage
+from pages.graph_viewer.graph_viewer import GraphViewer
 from style import APP_STYLE
 
 
 class Window(QWidget):
     def __init__(self):
         super().__init__()
+        self.graph_data = None
+
         self.setWindowTitle("Soil Analysis Tool")
         self.resize(1200, 500)
         self.setStyleSheet(APP_STYLE)
@@ -24,7 +24,6 @@ class Window(QWidget):
 
         self.tabs = QTabWidget()
 
-        # Instanciation des pages
         self.hydro_page = HydroPage()
         self.tassement_page = TassementPage()
 
@@ -46,14 +45,13 @@ class Window(QWidget):
         self.button_row.addWidget(self.calculate_button)
         self.button_row.addSpacerItem(QSpacerItem(20, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
 
-        self.figure = plt.figure()
-        self.canvas = FigureCanvas(self.figure)
+        self.graph_viewer = GraphViewer()
 
         self.col1.addWidget(self.tabs)
         self.col1.addLayout(self.button_row)
         self.col1.addWidget(self.result_label)
 
-        self.col2.addWidget(self.canvas)
+        self.col2.addWidget(self.graph_viewer)
 
         row_layout = QHBoxLayout()
         row_layout.addLayout(self.col1, 30)
@@ -65,7 +63,10 @@ class Window(QWidget):
     def calculate(self):
         current_tab = self.tabs.currentIndex()
         if current_tab == 0:
-            self.hydro_page.calculate(self.result_label)
+            self.graph_data = self.hydro_page.calculate(self.result_label)
+            print(self.graph_data)
+            if self.graph_data:
+                self.graph_viewer.set_graph_data(self.graph_data)
         elif current_tab == 1:
             self.tassement_page.calculate(self.result_label)
 
@@ -76,4 +77,3 @@ class Window(QWidget):
             self.result_label.setText("Résultat :")
         elif current_tab == 1:
             pass
-
