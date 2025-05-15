@@ -64,7 +64,6 @@ class Window(QWidget):
         current_tab = self.tabs.currentIndex()
         if current_tab == 0:
             self.graph_data = self.hydro_page.calculate(self.result_label)
-            print(self.graph_data)
             if self.graph_data:
                 self.graph_viewer.set_graph_data(self.graph_data)
         elif current_tab == 1:

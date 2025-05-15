@@ -67,10 +67,6 @@ class GraphViewer(QWidget):
             slope = -1 / self.graph_data["Cc"]
             end_y = start_y + slope * (end_x - start_x)
 
-            print("Stress")
-            print("start_y", start_y)
-            print("end_y", end_y)
-
             x_vals = [start_x, end_x]
             y_vals = [start_y, end_y]
 
@@ -92,10 +88,6 @@ class GraphViewer(QWidget):
             end_y = self.graph_data["E0"]
             slope = 1 / self.graph_data["Ck"]
             start_y = end_y - slope * (end_x - start_x)
-
-            print("Conductivity")
-            print("start_y", start_y)
-            print("end_y", end_y)
 
             x_vals = [start_x, end_x]
             y_vals = [start_y, end_y]

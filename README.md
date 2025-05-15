@@ -16,7 +16,7 @@ Requiert PyInstaller :
    pip install pyinstaller
 
 Puis exécuter :
-   pyinstaller --onefile --windowed App.py
+   pyinstaller --onefile --windowed main.py
 
 L’exécutable sera disponible dans le dossier dist/ :
-   dist/app.exe
+   dist/main.exe

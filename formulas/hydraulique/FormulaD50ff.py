@@ -6,25 +6,26 @@ class FormulaD50ff:
         self.pores_sol = None
         self.compress_sol = None
         self.density_sol = None
-        self.r12 = None
-        self.r13 = None
-        self.r14 = None
-        self.r15 = None
-        self.r16 = None
-        self.r17 = None
+        self.σv = None
+        self.E0 = None
+        self.Ei = None
+        self.σ0 = None
+        self.kv0 = None
+        self.Cc = None
+        self.Ck = None
         self.result = None
 
     def calculate(self, clay, water, compression, density, pore_style, Ei=None, Cc=None, Ck=None):
         self.type_sol = clay
         self.pores_sol = water
-        self.compress_sol = compression
+        self.compress_sol = self.σv = compression
         self.density_sol = density
-        self.r13 = Ei
-        self.r16 = Cc
-        self.r17 = Ck
+        self.Ei = Ei
+        self.Cc = Cc
+        self.Ck = Ck
 
         try:
-            if self.r13 == None:
+            if self.Ei == None:
                 if pore_style == "W":
                     self.formula13a()
                 elif pore_style == "ρf":
@@ -34,15 +35,15 @@ class FormulaD50ff:
             self.formula12()
             self.formula14()
             self.formula15()
-            if self.r16 == None:
+            if self.Cc == None:
                 self.formula16()
-            if self.r17 == None:
+            if self.Ck == None:
                 self.formula17()
             self.formula11()
         except (ZeroDivisionError, OverflowError) as e:
             raise e
 
-        return self.result, self.r13, self.r16, self.r17
+        return self.result, self.Ei, self.Cc, self.Ck, self.E0, self.σ0, self.kv0, self.σv
 
     def formula11(self):
         exponent = -(self.r16 / self.r17)
