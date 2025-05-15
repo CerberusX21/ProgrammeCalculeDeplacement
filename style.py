@@ -9,13 +9,22 @@ APP_STYLE = """
         font-weight: 600;
         color: #333;
     }
-    QLineEdit, QComboBox {
+    QLineEdit {
         background-color: #ffffff;
         color: #212529;
         border: 1px solid #ced4da;
         border-radius: 6px;
         padding: 6px 30px 6px 10px;
         min-width: 120px;
+    }
+    QComboBox {
+        background-color: #ffffff;
+        color: #212529;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 4px 10px;
+        min-width: 80px;
+        max-width: 120px;
     }
     QLineEdit:focus, QComboBox:focus {
         border: 1px solid #0d6efd;
@@ -60,5 +69,37 @@ APP_STYLE = """
         min-height: 40px;
         max-height: 40px;
         qproperty-alignment: 'AlignLeft';
+    }
+
+    QCheckBox {
+        font-size: 14px;
+        color: #212529;
+        padding: 4px 8px;
+    }
+
+    QCheckBox::indicator {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #0d6efd;
+        border-radius: 4px;
+        background-color: #ffffff;
+    }
+
+    QCheckBox::indicator:checked {
+        background-color: #0d6efd;
+        border-color: #0b5ed7;
+    }
+
+    QCheckBox::indicator:unchecked {
+        background-color: #ffffff;
+        border-color: #ced4da;
+    }
+
+    QCheckBox::indicator:pressed {
+        background-color: #0a58ca;
+    }
+
+    QCheckBox::indicator:hover {
+        border-color: #0d6efd;
     }
 """

@@ -12,7 +12,7 @@ class Window(QWidget):
         self.graph_data = None
 
         self.setWindowTitle("Soil Analysis Tool")
-        self.resize(1200, 500)
+        self.resize(1200, 700)
         self.setStyleSheet(APP_STYLE)
 
         self.master_layout = QVBoxLayout()
@@ -54,8 +54,8 @@ class Window(QWidget):
         self.col2.addWidget(self.graph_viewer)
 
         row_layout = QHBoxLayout()
-        row_layout.addLayout(self.col1, 30)
-        row_layout.addLayout(self.col2, 70)
+        row_layout.addLayout(self.col1, 20)
+        row_layout.addLayout(self.col2, 80)
 
         self.master_layout.addLayout(row_layout)
         self.setLayout(self.master_layout)
