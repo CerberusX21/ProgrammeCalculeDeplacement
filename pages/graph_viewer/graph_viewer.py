@@ -11,7 +11,6 @@ class GraphViewer(QWidget):
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
 
-        # UI
         self.checkbox_stress = QCheckBox("Effective Stress")
         self.checkbox_conductivity = QCheckBox("Hydraulic Conductivity")
         self.show_row = QHBoxLayout()
@@ -27,12 +26,11 @@ class GraphViewer(QWidget):
         layout.addLayout(self.show_row)
         layout.addWidget(self.canvas)
 
-        self.coord_label = QLabel("Coordonnées :")
+        self.coord_label = QLabel("Coordinates:")
         layout.addWidget(self.coord_label)
 
         self.setLayout(layout)
 
-        # For dynamic overlays
         self.follow_dots = []
         self.lines = []
         self.axes = []
@@ -103,17 +101,18 @@ class GraphViewer(QWidget):
             self.axes.append(ax)
             self.follow_dots.append(ax.plot([], [], 'ro')[0])
 
+        self.figure.tight_layout()
         self.canvas.draw()
 
     def mouse_move(self, event):
         if event.inaxes is None or event.xdata is None:
-            self.coord_label.setText("Coordonnées :")
+            self.coord_label.setText("Coordinates:")
             for dot in self.follow_dots:
                 dot.set_visible(False)
             self.canvas.draw_idle()
             return
 
-        coord_text = "Coordonnées :"
+        coord_text = "Coordinates:"
         updated = False
 
         for i, (line, ax, dot) in enumerate(zip(self.lines, self.axes, self.follow_dots)):
@@ -161,13 +160,12 @@ class GraphViewer(QWidget):
 
             dot.set_data([x], [y])
             dot.set_visible(True)
-            coord_text += f"\nGraphe {i + 1} : x = {x:.4g}, y = {y:.4f}"
+            coord_text += f"\nGraph {i + 1}: x = {x:.4g}, y = {y:.4f}"
             updated = True
 
         if updated:
             self.coord_label.setText(coord_text)
         else:
-            self.coord_label.setText("Coordonnées :")
+            self.coord_label.setText("Coordinates:")
 
         self.canvas.draw_idle()
-
