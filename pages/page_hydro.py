@@ -172,6 +172,7 @@ class HydroPage(QWidget):
         if self.pores_sol.currentText() == "ρf":
             if data["pores_sol"] >= data["density_sol"]:
                 QMessageBox.warning(self, "Invalid value", "Make sure Gs > ρf")
+                return
 
         formula_class = {
             "clay%": FormulaClay,

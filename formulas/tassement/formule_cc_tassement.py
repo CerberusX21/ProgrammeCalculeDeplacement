@@ -1,0 +1,66 @@
+import math
+
+class CalculCcStar:
+    """
+    Calcule la valeur de Cc* en fonction de ei*, du type de sol, de la valeur de l’indice,
+    et de l’état du sol (0 = IR, 1 = IP). Vérifie aussi le seuil minimal autorisé.
+    """
+
+    def __init__(self, ei_star: float, valeur_type_sol: float, type_sol: str, etat_sol: int):
+        self.ei_star = ei_star
+        self.valeur = valeur_type_sol
+        self.type = type_sol.strip()
+        self.etat = etat_sol  #  (0 = IR, 1 = IP)
+
+    def calculer(self) -> float:
+        if self.ei_star <= 0:
+            raise ValueError("ei* doit être strictement positif pour le calcul du log.")
+        print("hello world1")
+        log_ei = math.log(self.ei_star)
+        print("hello world2")
+        # Ice-Poor (1)
+        if self.etat == 1:
+            cc_star = 0.74 * log_ei + 0.22  # Cc* = 0.74 * log(ei*) + 0.22
+
+        # Ice-Rich (0)
+        elif self.etat == 0:
+            print("hello world3")
+            if self.type == "wL":
+                cc_star = (0.0081 * self.valeur - 0.019) * log_ei + (0.0033 * self.valeur + 0.037) # Cc* = (0.0081 * wL - 0.019) * log(ei*) + (0.0033 * wL + 0.037)
+                print("hello world4")
+            elif self.type == "clay%":
+                cc_star = (0.0051 * self.valeur - 0.018) * log_ei + (0.0015 * self.valeur + 0.096)
+                print("hello world5")
+            elif self.type == "d50ff":
+                print("hello world6")
+                if self.valeur <= 0:
+                    print("hello world7")
+                    raise ValueError("d50ff doit être > 0 pour calculer log.")
+                log_d50 = math.log(self.valeur)
+                cc_star = (-0.11 * log_d50 + 0.080) * log_ei + (-0.097 * log_d50 - 0.082)
+            else:
+                raise ValueError("Type de sol inconnu : attendu 'clay%', 'wL', ou 'd50ff'.")
+        else:
+            raise ValueError("État du sol non reconnu : attendu IR ou IP.")
+
+        # --- Vérification du seuil minimal autorisé ---
+        seuil = self.seuil_minimal()
+
+        if cc_star <= seuil:
+            raise ValueError(
+                f"Cc* = {cc_star:.6f} est inférieur au seuil minimal autorisé ({seuil:.6f}) pour le type de sol {self.type}."
+            )
+
+        return cc_star
+
+    def seuil_minimal(self) -> float:
+        if self.type == "wL":
+            return 0.004 * self.valeur - 0.05
+        elif self.type == "clay%":
+            return 0.001 * self.valeur + 0.05
+        elif self.type == "d50ff":
+            if self.valeur <= 0:
+                raise ValueError("d50ff doit être > 0 pour évaluer le seuil.")
+            return -0.04 * math.log(self.valeur) - 0.14
+        else:
+            raise ValueError("Type de sol invalide pour évaluation du seuil.")
