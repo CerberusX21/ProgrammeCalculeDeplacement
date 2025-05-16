@@ -11,6 +11,13 @@ import sys
 from FormulaClay import FormulaClay
 from FormulaD50ff import FormulaD50ff
 from FormulaLiquid import FormulaLiquid
+from formule_ei_tassement import EI_Tassement
+from formule_ip_ir_tassement import ClassificationSol
+from formule_cc_tassement import CalculCcStar
+from formule_e0_tassement import CalculE0Tassement
+from formule_sigma0 import CalculSigma0
+from formule_calculer_tassement import CalculTassements
+from formule_indice_des_vides import CalculIndiceDesVides
 
 class Window(QWidget):
     def __init__(self):
@@ -78,7 +85,7 @@ class Window(QWidget):
                 font-size: 16px;
                 color: #0d6efd;
                 min-height: 40px;
-                max-height: 40px;
+                max-height: 100px;
                 qproperty-alignment: 'AlignLeft';
             }
         """)
@@ -124,6 +131,59 @@ class Window(QWidget):
         tassement_form = QFormLayout()
         self.tassement_tab.setLayout(tassement_form)
 
+        # Champs pour le calcul de ei*
+        self.entree_pore_tassement = QLineEdit()
+        self.entree_pore_tassement.setPlaceholderText("Valeur du paramètre de pore")
+
+        self.type_pore_tassement = QComboBox()
+        self.type_pore_tassement.addItem("Teneur en eau w (kg/kg)", "w")
+        self.type_pore_tassement.addItem("Masse volumique ρf (g/cm³)", "ρf")
+        self.type_pore_tassement.addItem("Indice des vides ef", "ef")
+
+        self.entree_gs_tassement = QLineEdit()
+        self.entree_gs_tassement.setPlaceholderText("Densité spécifique Gs")
+
+        #Ajout du type de sol pour le tassement
+        self.entree_type_sol_valeur = QLineEdit()
+        self.entree_type_sol_valeur.setPlaceholderText("Valeur du type de sol")
+
+        self.entree_type_sol_type = QComboBox()
+        self.entree_type_sol_type.addItems(["clay%", "wL", "d50ff"])
+
+        tassement_form.addRow("Type de sol :", self._wrap(self.entree_type_sol_valeur, self.entree_type_sol_type))
+
+        # Case à cocher pour le calcul automatique de Cc*
+        self.checkbox_cc_auto = QCheckBox("Calculer automatiquement Cc*")
+        self.checkbox_cc_auto.setChecked(True)
+        self.checkbox_cc_auto.stateChanged.connect(self.toggle_cc_input)
+
+        # Champ modifiable (visible seulement si décoché)
+        self.cc_input = QLineEdit()
+        self.cc_input.setPlaceholderText("Entrez manuellement Cc*")
+
+        self.cc_label = QLabel("Cc*:")
+
+        # Masquer au début
+        self.cc_input.setVisible(False)
+        self.cc_label.setVisible(False)
+
+        # Ajouter dans le formulaire
+        tassement_form.addRow(self.checkbox_cc_auto)
+        tassement_form.addRow(self.cc_label, self.cc_input)
+
+        # (σ′v)
+        self.entree_sigma_v = QLineEdit()
+        self.entree_sigma_v.setPlaceholderText("Valeur de σ′v")
+        self.label_sigma_v = QLabel("Contrainte verticale σ′ᵥ (kPa) :")
+
+        # Ajout au layout de l'onglet Tassement
+        tassement_form.addRow("Type de pore :", self._wrap(self.entree_pore_tassement, self.type_pore_tassement))
+        tassement_form.addRow("Densité Gs :", self.entree_gs_tassement)
+        tassement_form.addRow(self.label_sigma_v, self.entree_sigma_v)
+
+        
+        
+        
         self.tabs.addTab(self.hydraulique_tab, "Conductivité hydraulique")
         self.tabs.addTab(self.tassement_tab, "Tassement")
 
@@ -154,6 +214,8 @@ class Window(QWidget):
         self.master_layout.addLayout(row_layout)
         self.setLayout(self.master_layout)
 
+    # Fonctions
+
     def _wrap(self, widget1, widget2):
         row = QHBoxLayout()
         row.addWidget(widget1)
@@ -172,7 +234,72 @@ class Window(QWidget):
             self.calculate_tassement()
 
     def calculate_tassement(self):
-        QMessageBox.information(self, "Non implémenté", "Le calcul de tassement n’est pas encore implémenté.")
+        
+            # --- Entrées utilisateur ---
+            valeur_pore = float(self.entree_pore_tassement.text())
+            Gs = float(self.entree_gs_tassement.text())
+            type_pore = self.type_pore_tassement.currentData()
+
+            valeur_sol = float(self.entree_type_sol_valeur.text())
+            type_sol = self.entree_type_sol_type.currentText()
+
+            # --- Calcul de ei* ---
+            ei_star = EI_Tassement(valeur_pore, Gs, type_pore).calculer()
+           
+
+            # --- Calcul de ef (indice des vides gelé) ---
+            if type_pore == "ef":
+                ef = valeur_pore  # utilisateur a fourni ef
+            else:
+                ef = ei_star * 1.09  # déduit à partir de ei*
+
+            # --- Classification Ice-Rich / Ice-Poor ---
+            classification = ClassificationSol(ei_star, valeur_sol, type_sol)
+            code_etat = classification.classer()
+          
+
+            # --- Cc* (automatique ou manuel) ---
+            if self.checkbox_cc_auto.isChecked():
+                cc_star = CalculCcStar(ei_star, valeur_sol, type_sol, code_etat).calculer()
+                self.cc_input.setText(f"{cc_star:.6f}")
+              
+            else:
+                try:
+                    cc_star = float(self.cc_input.text())
+                except ValueError:
+                    QMessageBox.warning(self, "Erreur", "Veuillez entrer une valeur numérique valide pour Cc*.")
+                    return
+
+            # --- Calcul de e₀* ---
+            e0_star = CalculE0Tassement(ei_star, cc_star, code_etat).calculer()
+           
+
+            # --- Calcul de σ′₀ ---
+            sigma0 = CalculSigma0(e0_star, type_sol, valeur_sol, code_etat).calculer()
+          
+
+            # ---  σ′ᵥ ---
+            try:
+                sigma_v = float(self.entree_sigma_v.text())
+            except ValueError:
+                QMessageBox.warning(self, "Erreur", "Veuillez entrer une valeur numérique valide pour σ′ᵥ.")
+                return
+
+            # --- Calcul de l'indice des vides final ---
+            indice_vides = CalculIndiceDesVides(e0_star, cc_star, sigma_v, sigma0).calculer()
+
+            # --- Calcul des tassements ---
+            s1, s2, s_total = CalculTassements(ef, e0_star, indice_vides).calculer()
+
+            # --- Affichage final ---
+            self.result_label.setText(
+                f"Tassement total S = {s_total:.2f} %\n"
+                f"Tassement S1 (fonte de glace) = {s1:.2f} %\n"
+                f"Tassement S2 (compression) = {s2:.2f} %"
+            )
+
+       
+
 
     def calculate_hydraulique(self):
         try:
@@ -205,6 +332,12 @@ class Window(QWidget):
             self.result_label.setText(f"Résultat :  {result}")
         except ValueError as e:
             QMessageBox.critical(self, "Erreur", f"Une erreur de calcul de formula non valide.\n {e}")
+
+
+    def toggle_cc_input(self, state):
+        is_checked = state == Qt.CheckState.Checked.value
+        self.cc_input.setVisible(not is_checked)
+        self.cc_label.setVisible(not is_checked)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
