@@ -16,7 +16,9 @@ APP_STYLE = """
         border-radius: 6px;
         padding: 6px 30px 6px 10px;
         min-width: 120px;
+        margin: 0px;
     }
+    
     QComboBox {
         background-color: #ffffff;
         color: #212529;
@@ -102,4 +104,34 @@ APP_STYLE = """
     QCheckBox::indicator:hover {
         border-color: #0d6efd;
     }
+/* Styles pour le QTabWidget */
+    QTabWidget::pane {
+        border: 1px solid #e2e6ea;
+        border-radius: 12px;
+        background-color: white;
+        margin-top: -1px;
+    }   
+            
+    QTabBar::tab {
+        background-color: transparent;
+        color: #495057;
+        font-weight: 500;
+        font-size: 16px;
+        padding: 12px 24px 12px 12px;
+        margin-right: 6px;
+        border: none;
+        border-bottom: 3px solid transparent;
+    }
+            
+    QTabBar::tab:selected {
+        color: #0d6efd;
+        font-weight: 600;
+        border-bottom: 3px solid #0d6efd;
+    }
+            
+    QTabBar::tab:hover {
+        color: #0b5ed7;
+        background-color: rgba(13, 110, 253, 0.1);
+    }   
+    
 """

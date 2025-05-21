@@ -1,4 +1,5 @@
-from PyQt6.QtWidgets import QHBoxLayout, QWidget
+from PyQt6.QtWidgets import QHBoxLayout, QWidget, QSizePolicy
+from PyQt6.QtCore import Qt
 
 def parametre(widget1, widget2, widget3):
     row = QHBoxLayout()
@@ -26,3 +27,25 @@ def parametre_result_inter(checkbox, line_edit):
     container = QWidget()
     container.setLayout(row)
     return container
+
+#fonction pour le "result soil:"
+def parametre_result_combo(checkbox, combo_box):
+    row = QHBoxLayout()
+    row.setContentsMargins(0, 0, 0, 0)
+    row.setSpacing(10)
+
+    # Checkbox fixe à gauche
+    checkbox.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+    row.addWidget(checkbox, 1)
+
+    # ComboBox expansible à droite
+    combo_box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+    row.addWidget(combo_box, 3)
+
+    row.setAlignment(checkbox, Qt.AlignmentFlag.AlignVCenter)
+    row.setAlignment(combo_box, Qt.AlignmentFlag.AlignVCenter)
+
+    container = QWidget()
+    container.setLayout(row)
+    return container
+

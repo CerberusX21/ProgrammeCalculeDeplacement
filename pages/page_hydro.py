@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget, QFormLayout, QLineEdit, QComboBox, QCheckBox, QMessageBox
+from PyQt6.QtWidgets import QWidget, QFormLayout, QLineEdit, QComboBox, QCheckBox, QMessageBox, QSizePolicy
 from PyQt6.QtCore import Qt
 
 from widgets import parametre, parametre_result_inter
@@ -55,6 +55,7 @@ class HydroPage(QWidget):
 
     def _create_line_edit(self, placeholder):
         edit = QLineEdit()
+        edit.setMinimumWidth(120)
         edit.setPlaceholderText(placeholder)
         return edit
 

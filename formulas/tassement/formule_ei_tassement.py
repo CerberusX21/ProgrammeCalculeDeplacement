@@ -6,7 +6,7 @@ class EI_Tassement:
     def __init__(self, valeur_pore: float, Gs: float, type_pore: str):
         self.valeur_pore = valeur_pore
         self.Gs = Gs
-        self.type_pore = type_pore  # "w", "ρf", "ef"
+        self.type_pore = type_pore  # "w", "ρf", "ef*"
 
     def calculer(self) -> float:
         # Validation Gs
@@ -19,7 +19,7 @@ class EI_Tassement:
             ei_star = 0.01 * self.valeur_pore * self.Gs  # Formule 13a
 
         elif self.type_pore == "ρf":
-            if abs(self.valeur_pore - 0.9174) < 1e-6:
+            if abs(self.valeur_pore - 0.9174) < 1e-6: # pour éviter la division par zéro et erreurs arrondies
                 raise ValueError("ρf ne peut pas être égal à 0.9174 (division par zéro).")
             ei_star = (self.Gs - self.valeur_pore) / (self.valeur_pore - 0.9174)  # Formule 13b
 

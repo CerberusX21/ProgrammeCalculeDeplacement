@@ -15,26 +15,19 @@ class CalculCcStar:
     def calculer(self) -> float:
         if self.ei_star <= 0:
             raise ValueError("ei* doit être strictement positif pour le calcul du log.")
-        print("hello world1")
         log_ei = math.log(self.ei_star)
-        print("hello world2")
         # Ice-Poor (1)
         if self.etat == 1:
             cc_star = 0.74 * log_ei + 0.22  # Cc* = 0.74 * log(ei*) + 0.22
 
         # Ice-Rich (0)
         elif self.etat == 0:
-            print("hello world3")
             if self.type == "wL":
                 cc_star = (0.0081 * self.valeur - 0.019) * log_ei + (0.0033 * self.valeur + 0.037) # Cc* = (0.0081 * wL - 0.019) * log(ei*) + (0.0033 * wL + 0.037)
-                print("hello world4")
             elif self.type == "clay%":
                 cc_star = (0.0051 * self.valeur - 0.018) * log_ei + (0.0015 * self.valeur + 0.096)
-                print("hello world5")
             elif self.type == "d50ff":
-                print("hello world6")
                 if self.valeur <= 0:
-                    print("hello world7")
                     raise ValueError("d50ff doit être > 0 pour calculer log.")
                 log_d50 = math.log(self.valeur)
                 cc_star = (-0.11 * log_d50 + 0.080) * log_ei + (-0.097 * log_d50 - 0.082)

@@ -52,8 +52,8 @@ class Window(QWidget):
         col2.addWidget(self.graph_viewer)
 
         row_layout = QHBoxLayout()
-        row_layout.addLayout(col1, 20)
-        row_layout.addLayout(col2, 80)
+        row_layout.addLayout(col1, 40)
+        row_layout.addLayout(col2, 60)
 
         self.master_layout.addLayout(row_layout)
         self.setLayout(self.master_layout)
