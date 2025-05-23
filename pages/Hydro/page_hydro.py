@@ -1,38 +1,50 @@
-from PyQt6.QtWidgets import QWidget, QFormLayout, QLineEdit, QComboBox, QCheckBox, QMessageBox, QLabel
+from PyQt6.QtWidgets import (
+    QWidget, QFormLayout, QLineEdit, QComboBox, QCheckBox, QMessageBox,
+    QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QSizePolicy
+)
 from PyQt6.QtCore import Qt
-
 from widgets import parametre, parametre_result_inter
 from formulas.hydraulique.FormulaClay import FormulaClay
 from formulas.hydraulique.FormulaLiquid import FormulaLiquid
 from formulas.hydraulique.FormulaD50ff import FormulaD50ff
+from pages.Hydro.graph_viewer_hydro import GraphViewer
 
 
 class HydroPage(QWidget):
     def __init__(self):
         super().__init__()
-        self._setup_ui()
+        self.graph_data = None
+
+        # Widgets
+        self._setup_form()
         self._init_unit_mappings()
         self._init_input_limits()
         self._connect_unit_updates()
         self._set_initial_units()
 
-    def _setup_ui(self):
-        self.layout = QFormLayout()
-        self.layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.layout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.layout.setHorizontalSpacing(20)
-        self.layout.setVerticalSpacing(15)
-        self.setLayout(self.layout)
+        self.result_label = QLabel("Result:")
+        self.result_label.setObjectName("ResultLabel")
+
+        self.calculate_button = QPushButton("Calculate")
+        self.reset_button = QPushButton("Reset")
+        self.graph_viewer = GraphViewer()
+
+        self.calculate_button.clicked.connect(self.calculate)
+        self.reset_button.clicked.connect(self.reset)
+
+        self._assemble_layout()
+
+    def _setup_form(self):
+        self.form_layout = QFormLayout()
+        self.form_layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.form_layout.setHorizontalSpacing(20)
+        self.form_layout.setVerticalSpacing(15)
 
         self.type_sol_input = self._create_line_edit("Value...")
         self.pores_input = self._create_line_edit("Value...")
         self.compress_input = self._create_line_edit("Value...")
         self.density_input = self._create_line_edit("Value...")
-        
-    
-        self.param_label = QLabel("Parameters")  
-        self.param_label.setObjectName("parameterLabel")
-        self.layout.addRow(self.param_label)  
 
         self.type_sol = QComboBox()
         self.type_sol.addItems(["clay%", "wL", "d50ff"])
@@ -50,13 +62,35 @@ class HydroPage(QWidget):
         self.result_Cc_input, self.result_Cc_check = self._create_optional_input("Value...")
         self.result_Ck_input, self.result_Ck_check = self._create_optional_input("Value...")
 
-        self.layout.addRow("Soil type:", parametre(self.type_sol_unit, self.type_sol, self.type_sol_input))
-        self.layout.addRow("Pore type:", parametre(self.pores_sol_unit, self.pores_sol, self.pores_input))
-        self.layout.addRow("Compression:", parametre(self.compress_sol_unit, self.compress_sol, self.compress_input))
-        self.layout.addRow("Gs type:", self.density_input)
-        self.layout.addRow("Result Ei:", parametre_result_inter(self.result_EI_check, self.result_EI_input))
-        self.layout.addRow("Result Cc*:", parametre_result_inter(self.result_Cc_check, self.result_Cc_input))
-        self.layout.addRow("Result Ck*:", parametre_result_inter(self.result_Ck_check, self.result_Ck_input))
+        self.form_layout.addRow("Soil type:", parametre(self.type_sol_unit, self.type_sol, self.type_sol_input))
+        self.form_layout.addRow("Pore type:", parametre(self.pores_sol_unit, self.pores_sol, self.pores_input))
+        self.form_layout.addRow("Compression:", parametre(self.compress_sol_unit, self.compress_sol, self.compress_input))
+        self.form_layout.addRow("Gs type:", self.density_input)
+        self.form_layout.addRow("Result Ei:", parametre_result_inter(self.result_EI_check, self.result_EI_input))
+        self.form_layout.addRow("Result Cc*:", parametre_result_inter(self.result_Cc_check, self.result_Cc_input))
+        self.form_layout.addRow("Result Ck*:", parametre_result_inter(self.result_Ck_check, self.result_Ck_input))
+
+    def _assemble_layout(self):
+        # Colonne gauche : form + boutons + résultat
+        left_layout = QVBoxLayout()
+        left_layout.addLayout(self.form_layout)
+
+        button_row = QHBoxLayout()
+        button_row.addWidget(self.reset_button)
+        button_row.addWidget(self.calculate_button)
+        left_layout.addLayout(button_row)
+        left_layout.addWidget(self.result_label)
+
+        # Colonne droite : graphique
+        self.graph_viewer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        right_layout = QVBoxLayout()
+        right_layout.addWidget(self.graph_viewer)
+
+        # Layout principal
+        main_layout = QHBoxLayout()
+        main_layout.addLayout(left_layout, 2)
+        main_layout.addLayout(right_layout, 3)
+        self.setLayout(main_layout)
 
     def _create_line_edit(self, placeholder):
         edit = QLineEdit()
@@ -74,45 +108,25 @@ class HydroPage(QWidget):
 
     def _init_unit_mappings(self):
         self.type_unit_mapping = {
-            self.type_sol: {
-                "clay%": ["%"],
-                "wL": ["%"],
-                "d50ff": ["mm"]
-            },
-            self.pores_sol: {
-                "W": ["kg/kg"],
-                "ρf": ["kg/m3", "g/cm3"],
-                "ef*": ["Direct"]
-            },
-            self.compress_sol: {
-                "σ′v": ["kPa"]
-            }
+            self.type_sol: {"clay%": ["%"], "wL": ["%"], "d50ff": ["mm"]},
+            self.pores_sol: {"W": ["kg/kg"], "ρf": ["kg/m3", "g/cm3"], "ef*": ["Direct"]},
+            self.compress_sol: {"σ′v": ["kPa"]}
         }
 
     def _init_input_limits(self):
         self.input_limits = {
-            self.type_sol_unit: {
-                "%": (1, 100),
-                "mm": (0.001, 0.1)
-            },
+            self.type_sol_unit: {"%": (1, 100), "mm": (0.001, 0.1)},
             self.pores_sol_unit: {
-                "kg/kg": (0, float('inf')),
-                "kg/m3": (0.9, 3),
-                "g/cm3": (900, 3000),
-                "Direct": (0, float('inf')),
+                "kg/kg": (0, float('inf')), "kg/m3": (0.9, 3),
+                "g/cm3": (900, 3000), "Direct": (0, float('inf'))
             },
-            self.compress_sol_unit: {
-                "kPa": (0, float('inf'))
-            }
+            self.compress_sol_unit: {"kPa": (0, float('inf'))}
         }
 
     def _connect_unit_updates(self):
-        self.type_sol.currentIndexChanged.connect(
-            lambda: self.update_unit_options(self.type_sol, self.type_sol_unit))
-        self.pores_sol.currentIndexChanged.connect(
-            lambda: self.update_unit_options(self.pores_sol, self.pores_sol_unit))
-        self.compress_sol.currentIndexChanged.connect(
-            lambda: self.update_unit_options(self.compress_sol, self.compress_sol_unit))
+        self.type_sol.currentIndexChanged.connect(lambda: self.update_unit_options(self.type_sol, self.type_sol_unit))
+        self.pores_sol.currentIndexChanged.connect(lambda: self.update_unit_options(self.pores_sol, self.pores_sol_unit))
+        self.compress_sol.currentIndexChanged.connect(lambda: self.update_unit_options(self.compress_sol, self.compress_sol_unit))
 
     def _set_initial_units(self):
         self.update_unit_options(self.type_sol, self.type_sol_unit)
@@ -144,7 +158,7 @@ class HydroPage(QWidget):
 
         return True, None, None
 
-    def calculate(self, result_label):
+    def calculate(self):
         try:
             data = {
                 'type_sol': float(self.type_sol_input.text()),
@@ -175,49 +189,34 @@ class HydroPage(QWidget):
         if self.pores_sol_unit.currentText() == "g/cm3":
             data["pores_sol"] /= 1000
 
-        if self.pores_sol.currentText() == "ρf":
-            if data["pores_sol"] >= data["density_sol"]:
-                QMessageBox.warning(self, "Invalid value", "Make sure Gs > ρf")
-                return
+        if self.pores_sol.currentText() == "ρf" and data["pores_sol"] >= data["density_sol"]:
+            QMessageBox.warning(self, "Invalid value", "Make sure Gs > ρf")
+            return
 
-        formula_class = {
-            "clay%": FormulaClay,
-            "wL": FormulaLiquid,
-            "d50ff": FormulaD50ff
-        }.get(data["type"])
-       
-        Ei = (
-                float(self.result_EI_input.text())
-                if self.result_EI_check.isChecked() and self.result_EI_input.text().strip()
-                else None
-            )
-
-        Cc = (
-                float(self.result_Cc_input.text())
-                if self.result_Cc_check.isChecked() and self.result_Cc_input.text().strip()
-                else None
-            )
-
-        Ck = (
-                float(self.result_Ck_input.text())
-                if self.result_Ck_check.isChecked() and self.result_Ck_input.text().strip()
-                else None
-            )
+        formula_class = {"clay%": FormulaClay, "wL": FormulaLiquid, "d50ff": FormulaD50ff}.get(data["type"])
+        Ei = float(self.result_EI_input.text()) if self.result_EI_check.isChecked() else None
+        Cc = float(self.result_Cc_input.text()) if self.result_Cc_check.isChecked() else None
+        Ck = float(self.result_Ck_input.text()) if self.result_Ck_check.isChecked() else None
 
         try:
             result, Ei, Cc, Ck, E0, σ0, kv0, σv = formula_class().calculate(
-                data["type_sol"], data["pores_sol"], data["compress_sol"], data["density_sol"], data["water"],
-                Ei=Ei, Cc=Cc, Ck=Ck
+                data["type_sol"], data["pores_sol"], data["compress_sol"], data["density_sol"],
+                data["water"], Ei=Ei, Cc=Cc, Ck=Ck
             )
-            result_label.setText(f"Result: {result:.2e}")
-            self.result_EI_input.setText(f"{Ei:.6f}")
-            self.result_Cc_input.setText(f"{Cc:.6f}")
-            self.result_Ck_input.setText(f"{Ck:.6f}")
+            self.result_label.setText(f"Result: {result:.2e}")
+            self.result_EI_input.setText(f"{Ei:.2f}")
+            self.result_Cc_input.setText(f"{Cc:.2f}")
+            self.result_Ck_input.setText(f"{Ck:.2f}")
 
-            
-            return self.register(result, Ei, Cc, Ck, E0, σ0, kv0, σv)
+            self.graph_data = {
+                "result": result, "Ei": Ei, "Cc": Cc, "Ck": Ck,
+                "E0": E0, "σ0": σ0, "kv0": kv0, "σv": σv
+            }
+            self.graph_viewer.set_is_tassement(False)
+            self.graph_viewer.set_graph_data(self.graph_data)
+
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Unknown calculation error: {e}")
+            QMessageBox.critical(self, "Error", f"Calculation error: {e}")
 
     def reset(self):
         for input_widget in [
@@ -241,8 +240,5 @@ class HydroPage(QWidget):
             check_box.setChecked(False)
             input_widget.setEnabled(False)
 
-    def register(self, result, Ei, Cc, Ck, E0, σ0, kv0, σv):
-        return {
-            "result": result, "Ei": Ei, "Cc": Cc, "Ck": Ck,
-            "E0": E0, "σ0": σ0, "kv0": kv0, "σv": σv
-        }
+        self.result_label.setText("Result:")
+        self.graph_viewer.clear_graph()
