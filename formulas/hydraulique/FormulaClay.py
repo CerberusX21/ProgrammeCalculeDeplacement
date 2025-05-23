@@ -43,11 +43,11 @@ class FormulaClay:
         except (ZeroDivisionError, OverflowError) as e:
             raise e
 
-        return {self.result, self.Ei, self.Cc, self.Ck, self.E0, self.σ0, self.kv0, self.σv}
+        return (self.result, self.Ei, self.Cc, self.Ck, self.E0, self.σ0, self.kv0, self.σv)
 
     def formula11(self):
         exponent = -(self.Cc / self.Ck)
-        base = self.compress_sol/self.σ0
+        base = self.σv/self.σ0
         self.result = self.kv0 * base ** exponent
 
 
@@ -56,7 +56,7 @@ class FormulaClay:
         denominator = 0.30
         exponent = numerator / denominator
         self.E0 = 10 ** exponent
-
+        
 
     def formula13a(self):
         self.Ei = 0.01 * self.pores_sol * self.density_sol
@@ -77,10 +77,10 @@ class FormulaClay:
 
     def formula15(self):
         exponent = -0.077 * self.type_sol + (-0.05 * self.type_sol + 20.5) * self.E0
-        self.kv0 = 1.1 * (10 ** (-12)) * math.exp(exponent)
+        self.kv0 = 3* 1.1 * (10 ** (-12)) * math.exp(exponent) # ajout de *3 
 
     def formula16(self):
-        self.Cc = 0.74 * math.log(self.E0) + 0.22
+        self.Cc = 0.74 * math.log10(self.E0) + 0.22
 
     def formula17(self):
-        self.Ck = 0.30 * math.log(self.E0) + 0.12
+        self.Ck = 0.30 * math.log10(self.E0) + 0.12

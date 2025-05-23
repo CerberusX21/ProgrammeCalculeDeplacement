@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget, QFormLayout, QLineEdit, QComboBox, QCheckBox, QMessageBox, QSizePolicy
+from PyQt6.QtWidgets import QWidget, QFormLayout, QLineEdit, QComboBox, QCheckBox, QMessageBox, QLabel
 from PyQt6.QtCore import Qt
 
 from widgets import parametre, parametre_result_inter
@@ -28,6 +28,11 @@ class HydroPage(QWidget):
         self.pores_input = self._create_line_edit("Value...")
         self.compress_input = self._create_line_edit("Value...")
         self.density_input = self._create_line_edit("Value...")
+        
+    
+        self.param_label = QLabel("Parameters")  
+        self.param_label.setObjectName("parameterLabel")
+        self.layout.addRow(self.param_label)  
 
         self.type_sol = QComboBox()
         self.type_sol.addItems(["clay%", "wL", "d50ff"])
@@ -180,10 +185,24 @@ class HydroPage(QWidget):
             "wL": FormulaLiquid,
             "d50ff": FormulaD50ff
         }.get(data["type"])
+       
+        Ei = (
+                float(self.result_EI_input.text())
+                if self.result_EI_check.isChecked() and self.result_EI_input.text().strip()
+                else None
+            )
 
-        Ei = float(self.result_EI_input.text()) if self.result_EI_input.isEnabled() else None
-        Cc = float(self.result_Cc_input.text()) if self.result_Cc_input.isEnabled() else None
-        Ck = float(self.result_Ck_input.text()) if self.result_Ck_input.isEnabled() else None
+        Cc = (
+                float(self.result_Cc_input.text())
+                if self.result_Cc_check.isChecked() and self.result_Cc_input.text().strip()
+                else None
+            )
+
+        Ck = (
+                float(self.result_Ck_input.text())
+                if self.result_Ck_check.isChecked() and self.result_Ck_input.text().strip()
+                else None
+            )
 
         try:
             result, Ei, Cc, Ck, E0, σ0, kv0, σv = formula_class().calculate(
@@ -191,9 +210,11 @@ class HydroPage(QWidget):
                 Ei=Ei, Cc=Cc, Ck=Ck
             )
             result_label.setText(f"Result: {result:.2e}")
-            self.result_EI_input.setText(f"{Ei:.2f}")
-            self.result_Cc_input.setText(f"{Cc:.2f}")
-            self.result_Ck_input.setText(f"{Ck:.2f}")
+            self.result_EI_input.setText(f"{Ei:.6f}")
+            self.result_Cc_input.setText(f"{Cc:.6f}")
+            self.result_Ck_input.setText(f"{Ck:.6f}")
+
+            
             return self.register(result, Ei, Cc, Ck, E0, σ0, kv0, σv)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Unknown calculation error: {e}")

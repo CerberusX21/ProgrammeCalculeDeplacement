@@ -38,6 +38,8 @@ class Window(QWidget):
         self.graph_viewer = GraphViewer()
         self.graph_viewer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
+        self.tabs.currentChanged.connect(self.on_tab_changed)
+
     def _setup_layouts(self):
         self.master_layout = QVBoxLayout()
         self.master_layout.setSpacing(15)
@@ -75,17 +77,52 @@ class Window(QWidget):
 
     def calculate(self):
         current_index = self.tabs.currentIndex()
-        if current_index == 0:
+
+        if current_index == 0:  # Onglet Conductivité Hydraulique
             self.graph_data = self.hydro_page.calculate(self.result_label)
+            self.graph_viewer.set_is_tassement(False)
+            self.graph_viewer.set_ei_value(None)
+
+        elif current_index == 1:  # Onglet Tassement
+            self.graph_data = self.tassement_page.calculate(self.result_label)
+            self.graph_viewer.set_is_tassement(True)
             if self.graph_data:
-                self.graph_viewer.set_graph_data(self.graph_data)
-        elif current_index == 1:
-            self.tassement_page.calculate(self.result_label)
+                self.graph_viewer.set_ei_value(self.graph_data.get("ei_star"))
+
+        if self.graph_data:
+            self.graph_viewer.set_graph_data(self.graph_data)
 
     def reset(self):
         current_index = self.tabs.currentIndex()
         if current_index == 0:
             self.hydro_page.reset()
-            self.result_label.setText("Result:")
         elif current_index == 1:
-            pass
+            self.tassement_page.reset()
+        self.graph_viewer.clear_graph()
+        self.result_label.setText("Result:")
+
+    def on_tab_changed(self, index):
+        self.graph_viewer.clear_graph()
+        self.graph_viewer.checkbox_stress.blockSignals(True)
+        self.graph_viewer.checkbox_conductivity.blockSignals(True)
+
+        if index == 0:
+            self.graph_viewer.set_is_tassement(False)
+            self.graph_viewer.checkbox_stress.setEnabled(True)
+            self.graph_viewer.checkbox_stress.setChecked(True)
+            self.graph_viewer.checkbox_conductivity.setEnabled(True)
+            self.graph_viewer.checkbox_conductivity.setChecked(True)
+            self.graph_viewer.set_ei_value(None)
+
+        elif index == 1:
+            self.graph_viewer.set_is_tassement(True)
+            self.graph_viewer.checkbox_stress.setEnabled(True)
+            self.graph_viewer.checkbox_stress.setChecked(True)
+            self.graph_viewer.checkbox_conductivity.setChecked(False)
+            self.graph_viewer.checkbox_conductivity.setEnabled(False)
+
+        self.graph_viewer.checkbox_stress.blockSignals(False)
+        self.graph_viewer.checkbox_conductivity.blockSignals(False)
+
+        if self.graph_data:
+            self.graph_viewer.set_graph_data(self.graph_data)

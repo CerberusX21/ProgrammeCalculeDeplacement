@@ -43,11 +43,11 @@ class FormulaLiquid:
         except (ZeroDivisionError, OverflowError) as e:
             raise e
 
-        return {self.result, self.Ei, self.Cc, self.Ck, self.E0, self.σ0, self.kv0, self.σv}
+        return (self.result, self.Ei, self.Cc, self.Ck, self.E0, self.σ0, self.kv0, self.σv)
 
     def formula11(self):
         exponent = -(self.Cc / self.Ck)
-        base = self.compress_sol / self.σ0
+        base = self.σv/self.σ0
         self.result = self.kv0 * base ** exponent
 
     def formula12(self):
@@ -71,14 +71,14 @@ class FormulaLiquid:
         numerator = self.E0 - 0.014 * self.type_sol - 0.42
         denominator = -0.0014 * self.type_sol - 0.012
         exponent = numerator / denominator
-        self.σ0 = 2 * math.exp(exponent)
+        self.σ0 = 3.9 * math.exp(exponent) #modifier de 2 à 3.9 
 
     def formula15(self):
         exponent = -0.25 * self.type_sol + (0.08 * self.type_sol + 12.85) * self.E0
-        self.kv0 = 1.3 * (10 ** (-8)) * math.exp(exponent)
+        self.kv0 = 3* 1.3 * (10 ** (-8)) * math.exp(exponent) # ajout du 3* 
 
     def formula16(self):
-        self.Cc = 0.74 * math.log(self.E0) + 0.22
+        self.Cc = 0.74 * math.log10(self.E0) + 0.22
 
     def formula17(self):
-        self.Ck = 0.30 * math.log(self.E0) + 0.12
+        self.Ck = 0.30 * math.log10(self.E0) + 0.12

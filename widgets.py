@@ -12,14 +12,14 @@ def parametre(widget1, widget2, widget3):
     container.setLayout(row)
     return container
 
-def parametre_result_inter(checkbox, line_edit):
+def parametre_result_inter(widget1, widget2):
     row = QHBoxLayout()
     row.setContentsMargins(0, 0, 0, 0)
     row.setSpacing(10)
     row.addStretch(1)
-    row.addWidget(checkbox)
+    row.addWidget(widget1)
     row.addStretch(1)
-    row.addWidget(line_edit)
+    row.addWidget(widget2)
     row.setStretch(0, 1)
     row.setStretch(1, 0)
     row.setStretch(2, 1)

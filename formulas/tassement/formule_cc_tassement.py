@@ -15,7 +15,7 @@ class CalculCcStar:
     def calculer(self) -> float:
         if self.ei_star <= 0:
             raise ValueError("ei* doit être strictement positif pour le calcul du log.")
-        log_ei = math.log(self.ei_star)
+        log_ei = math.log10(self.ei_star)
         # Ice-Poor (1)
         if self.etat == 1:
             cc_star = 0.74 * log_ei + 0.22  # Cc* = 0.74 * log(ei*) + 0.22
@@ -43,6 +43,7 @@ class CalculCcStar:
             raise ValueError(
                 f"Cc* = {cc_star:.6f} est inférieur au seuil minimal autorisé ({seuil:.6f}) pour le type de sol {self.type}."
             )
+        print (cc_star)
 
         return cc_star
 

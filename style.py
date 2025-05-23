@@ -8,6 +8,8 @@ APP_STYLE = """
     QLabel {
         font-weight: 600;
         color: #333;
+        padding: 5px;
+        font-family: "Segoe UI";
     }
     QLineEdit {
         background-color: #ffffff;
@@ -76,7 +78,7 @@ APP_STYLE = """
     QCheckBox {
         font-size: 14px;
         color: #212529;
-        padding: 4px 8px;
+        padding: 4px ;
     }
 
     QCheckBox::indicator {
@@ -133,5 +135,13 @@ APP_STYLE = """
         color: #0b5ed7;
         background-color: rgba(13, 110, 253, 0.1);
     }   
+
+    #parameterLabel {
+    color: #333;   
+    font-size: 18px;  
+    font-family: "Segoe UI";
+    padding: 4px;     
+
+}
     
 """

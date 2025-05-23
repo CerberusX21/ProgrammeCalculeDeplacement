@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget, QFormLayout, QLineEdit, QComboBox, QCheckBox, QMessageBox
+from PyQt6.QtWidgets import QWidget, QFormLayout, QLineEdit, QComboBox, QCheckBox, QMessageBox, QLabel
 from PyQt6.QtCore import Qt
 from widgets import parametre, parametre_result_inter, parametre_result_combo
 from formulas.tassement.formule_ei_tassement import EI_Tassement
@@ -39,6 +39,11 @@ class TassementPage(QWidget):
         self.compress_input = self._create_line_edit("Value...")
         self.density_input = self._create_line_edit("Value...")
 
+       
+        self.param_label = QLabel("Parameters")  
+        self.param_label.setObjectName("parameterLabel")
+        self.layout.addRow(self.param_label)  
+
         self.type_sol = QComboBox()
         self.type_sol.addItems(["clay%", "wL", "d50ff"])
         self.type_sol_unit = QComboBox()
@@ -63,13 +68,14 @@ class TassementPage(QWidget):
             lambda state: self.result_type_sol_choice.setEnabled(state == Qt.CheckState.Checked.value)
         )
 
+
         self.layout.addRow("Soil type:", parametre(self.type_sol_unit, self.type_sol, self.type_sol_input))
         self.layout.addRow("Pore type:", parametre(self.pores_sol_unit, self.pores_sol, self.pores_input))
         self.layout.addRow("Compression:", parametre(self.compress_sol_unit, self.compress_sol, self.compress_input))
         self.layout.addRow("Gs type:", self.density_input)
         self.layout.addRow("Result Ei:", parametre_result_inter(self.result_EI_check, self.result_EI_input))
         self.layout.addRow("Result Cc*:", parametre_result_inter(self.result_Cc_check, self.result_Cc_input))
-        self.layout.addRow("Result soil:", parametre_result_combo(self.result_type_sol_check, self.result_type_sol_choice))
+        self.layout.addRow("Result soil:", parametre_result_inter(self.result_type_sol_check, self.result_type_sol_choice))
 
     def _create_line_edit(self, placeholder):
         edit = QLineEdit()
@@ -301,6 +307,7 @@ class TassementPage(QWidget):
         return {
             "result": sigma0,
             "kv0": float(self.compress_input.text()),
+            "sigma_v": float(self.compress_input.text()),  # ← ajoute cette ligne
             "E0": e0_star,
             "Cc": cc_star,
             "ei_star": ei_star,
