@@ -15,7 +15,6 @@ class HydroPage(QWidget):
         super().__init__()
         self.graph_data = None
 
-        # Widgets
         self._setup_form()
         self._init_unit_mappings()
         self._init_input_limits()
@@ -71,7 +70,6 @@ class HydroPage(QWidget):
         self.form_layout.addRow("Result Ck*:", parametre_result_inter(self.result_Ck_check, self.result_Ck_input))
 
     def _assemble_layout(self):
-        # Colonne gauche : form + boutons + résultat
         left_layout = QVBoxLayout()
         left_layout.addLayout(self.form_layout)
 
@@ -81,12 +79,10 @@ class HydroPage(QWidget):
         left_layout.addLayout(button_row)
         left_layout.addWidget(self.result_label)
 
-        # Colonne droite : graphique
         self.graph_viewer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         right_layout = QVBoxLayout()
         right_layout.addWidget(self.graph_viewer)
 
-        # Layout principal
         main_layout = QHBoxLayout()
         main_layout.addLayout(left_layout, 2)
         main_layout.addLayout(right_layout, 3)
@@ -182,8 +178,7 @@ class HydroPage(QWidget):
         for value, unit_combo, label in validations:
             valid, min_val, max_val = self.validate_input(value, unit_combo)
             if not valid:
-                QMessageBox.warning(self, "Invalid value",
-                                    f"The value for {label} must be between {min_val} and {max_val}.")
+                QMessageBox.warning(self, "Invalid value", f"The value for {label} must be between {min_val} and {max_val}.")
                 return
 
         if self.pores_sol_unit.currentText() == "g/cm3":
@@ -212,7 +207,6 @@ class HydroPage(QWidget):
                 "result": result, "Ei": Ei, "Cc": Cc, "Ck": Ck,
                 "E0": E0, "σ0": σ0, "kv0": kv0, "σv": σv
             }
-            self.graph_viewer.set_is_tassement(False)
             self.graph_viewer.set_graph_data(self.graph_data)
 
         except Exception as e:
