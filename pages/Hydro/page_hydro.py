@@ -61,9 +61,9 @@ class HydroPage(QWidget):
         self.result_Cc_input, self.result_Cc_check = self._create_optional_input("Value...")
         self.result_Ck_input, self.result_Ck_check = self._create_optional_input("Value...")
 
-        self.form_layout.addRow("Soil type:", parametre(self.type_sol_unit, self.type_sol, self.type_sol_input))
-        self.form_layout.addRow("Pore type:", parametre(self.pores_sol_unit, self.pores_sol, self.pores_input))
-        self.form_layout.addRow("Compression:", parametre(self.compress_sol_unit, self.compress_sol, self.compress_input))
+        self.form_layout.addRow("Soil type:", parametre(self.type_sol, self.type_sol_unit, self.type_sol_input))
+        self.form_layout.addRow("Pore type:", parametre(self.pores_sol, self.pores_sol_unit, self.pores_input))
+        self.form_layout.addRow("Compression:", parametre(self.compress_sol, self.compress_sol_unit, self.compress_input))
         self.form_layout.addRow("Gs type:", self.density_input)
         self.form_layout.addRow("Result Ei:", parametre_result_inter(self.result_EI_check, self.result_EI_input))
         self.form_layout.addRow("Result Cc*:", parametre_result_inter(self.result_Cc_check, self.result_Cc_input))
@@ -189,23 +189,23 @@ class HydroPage(QWidget):
             return
 
         formula_class = {"clay%": FormulaClay, "wL": FormulaLiquid, "d50ff": FormulaD50ff}.get(data["type"])
-        Ei = float(self.result_EI_input.text()) if self.result_EI_check.isChecked() else None
-        Cc = float(self.result_Cc_input.text()) if self.result_Cc_check.isChecked() else None
-        Ck = float(self.result_Ck_input.text()) if self.result_Ck_check.isChecked() else None
+        ei = float(self.result_EI_input.text()) if self.result_EI_check.isChecked() else None
+        cc = float(self.result_Cc_input.text()) if self.result_Cc_check.isChecked() else None
+        ck = float(self.result_Ck_input.text()) if self.result_Ck_check.isChecked() else None
 
         try:
-            result, Ei, Cc, Ck, E0, σ0, kv0, σv = formula_class().calculate(
+            result, ei, cc, ck, e0, sigma_0, kv0, sigma_v = formula_class().calculate(
                 data["type_sol"], data["pores_sol"], data["compress_sol"], data["density_sol"],
-                data["water"], Ei=Ei, Cc=Cc, Ck=Ck
+                data["water"], ei=ei, cc=cc, ck=ck
             )
             self.result_label.setText(f"Result: {result:.2e}")
-            self.result_EI_input.setText(f"{Ei:.2f}")
-            self.result_Cc_input.setText(f"{Cc:.2f}")
-            self.result_Ck_input.setText(f"{Ck:.2f}")
+            self.result_EI_input.setText(f"{ei:.2f}")
+            self.result_Cc_input.setText(f"{cc:.2f}")
+            self.result_Ck_input.setText(f"{ck:.2f}")
 
             self.graph_data = {
-                "result": result, "Ei": Ei, "Cc": Cc, "Ck": Ck,
-                "E0": E0, "σ0": σ0, "kv0": kv0, "σv": σv
+                "result": result, "ei": ei, "cc": cc, "ck": ck,
+                "e0": e0, "sigma_0": sigma_0, "kv0": kv0, "sigma_v": sigma_v
             }
             self.graph_viewer.set_graph_data(self.graph_data)
 

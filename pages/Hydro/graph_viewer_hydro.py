@@ -1,8 +1,8 @@
-# pages/graph_viewer/graph_viewer_hydro.py
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QCheckBox, QLabel, QHBoxLayout
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
+
 
 class GraphViewer(QWidget):
     def __init__(self):
@@ -60,20 +60,28 @@ class GraphViewer(QWidget):
 
         if self.checkbox_stress.isChecked():
             ax = self.figure.add_subplot(1, cols, pos)
-            start_x = self.graph_data["result"]
-            end_x = self.graph_data["kv0"]
-            start_y = self.graph_data["E0"]
-            slope = -1 / self.graph_data["Cc"]
-            end_y = start_y + slope * (end_x - start_x)
 
-            x_vals = [start_x, end_x]
-            y_vals = [start_y, end_y]
+            sigma_0 = self.graph_data["sigma_0"]
+            sigma_v = self.graph_data["sigma_v"]
+            ei = self.graph_data["ei"]
+            e0 = self.graph_data["e0"]
+            cc = self.graph_data["cc"]
 
-            line, = ax.plot(x_vals, y_vals, marker='o')
+            # Ligne verticale entre Ei et E0 à σ0
+            ax.plot([sigma_0, sigma_0], [ei, e0], 'b--', label="Drainage")
+
+            # Ligne inclinée de σ0 à σv avec pente -1/Cc
+            delta = sigma_v - sigma_0
+            pente = -1 / cc
+            e1 = e0 + pente * delta
+
+            line, = ax.plot([sigma_0, sigma_v], [e0, e1], 'k-', marker='o', label="Compression curve")
+
             ax.set_title("Effective Stress")
             ax.set_xlabel("Effective Stress (σ') [kPa]")
             ax.set_ylabel("Void Ratio (e)")
             ax.grid(True)
+            ax.legend()
 
             self.lines.append(line)
             self.axes.append(ax)
@@ -82,21 +90,26 @@ class GraphViewer(QWidget):
 
         if self.checkbox_conductivity.isChecked():
             ax = self.figure.add_subplot(1, cols, pos)
-            start_x = self.graph_data["result"]
-            end_x = self.graph_data["kv0"]
-            end_y = self.graph_data["E0"]
-            slope = 1 / self.graph_data["Ck"]
-            start_y = end_y - slope * (end_x - start_x)
 
-            x_vals = [start_x, end_x]
-            y_vals = [start_y, end_y]
+            xf = self.graph_data["kv0"]
+            xi = self.graph_data["result"]
+            yf = self.graph_data["e0"]
+            ck = self.graph_data["ck"]
 
-            line, = ax.plot(x_vals, y_vals, marker='o')
+            delta_k = xf - xi
+            pente = ck
+            yi = yf - pente * delta_k
+
+            if yi == yf:
+                print("equal")
+
+            line, = ax.plot([xi, xf], [yi, yf], 'k-', marker='o', label="Conductivity curve")
+
             ax.set_title("Hydraulic Conductivity")
             ax.set_xlabel("Hydraulic Conductivity (k) [m/s]")
             ax.set_ylabel("Void Ratio (e)")
-            ax.set_xscale("log")
             ax.grid(True)
+            ax.legend()
 
             self.lines.append(line)
             self.axes.append(ax)
