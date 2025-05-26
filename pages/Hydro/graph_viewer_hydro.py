@@ -67,10 +67,8 @@ class GraphViewer(QWidget):
             e0 = self.graph_data["e0"]
             cc = self.graph_data["cc"]
 
-            # Ligne verticale entre Ei et E0 à σ0
             ax.plot([sigma_0, sigma_0], [ei, e0], 'b--', label="Drainage")
 
-            # Ligne inclinée de σ0 à σv avec pente -1/Cc
             delta = sigma_v - sigma_0
             pente = -1 / cc
             e1 = e0 + pente * delta
@@ -99,9 +97,6 @@ class GraphViewer(QWidget):
             delta_k = xf - xi
             pente = ck
             yi = yf - pente * delta_k
-
-            if yi == yf:
-                print("equal")
 
             line, = ax.plot([xi, xf], [yi, yf], 'k-', marker='o', label="Conductivity curve")
 
