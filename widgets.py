@@ -28,5 +28,3 @@ def parametre_result_inter(widget1, widget2):
     container = QWidget()
     container.setLayout(row)
     return container
-
-

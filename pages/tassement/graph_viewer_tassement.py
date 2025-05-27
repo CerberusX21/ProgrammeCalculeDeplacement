@@ -15,19 +15,15 @@ class GraphViewer(QWidget):
         self.canvas = FigureCanvas(self.figure)
 
         self.checkbox_stress = QCheckBox("Effective Stress")
-        self.checkbox_conductivity = QCheckBox("Hydraulic Conductivity")
         self.show_row = QHBoxLayout()
 
         # Configuration des checkboxes
         self.checkbox_stress.setChecked(True)
-        self.checkbox_conductivity.setChecked(False)
-        self.checkbox_conductivity.setEnabled(False) #on le laisse désactivé car pas besoin
         self.checkbox_stress.stateChanged.connect(self.update_graph_display)
 
         layout = QVBoxLayout()
         self.show_row.addWidget(QLabel("Show Graphs:"))
         self.show_row.addWidget(self.checkbox_stress)
-        self.show_row.addWidget(self.checkbox_conductivity)
         layout.addLayout(self.show_row)
         layout.addWidget(self.canvas)
 

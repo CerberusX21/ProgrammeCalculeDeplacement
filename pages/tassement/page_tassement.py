@@ -71,7 +71,7 @@ class TassementPage(QWidget):
         self.result_type_sol_choice.setCurrentIndex(-1)
         self.result_type_sol_choice.setEnabled(False)
         self.result_type_sol_choice.setMinimumWidth(150)
-        self.result_type_sol_choice.setMaximumWidth(150)
+        self.result_type_sol_choice.setMaximumWidth(200)
         self.result_type_sol_check.stateChanged.connect(
             lambda state: self.result_type_sol_choice.setEnabled(state == Qt.CheckState.Checked.value)
         )

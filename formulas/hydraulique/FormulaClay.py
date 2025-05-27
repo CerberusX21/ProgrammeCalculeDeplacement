@@ -6,26 +6,26 @@ class FormulaClay:
         self.pores_sol = None
         self.compress_sol = None
         self.density_sol = None
-        self.σv = None
+        self.sigma_v = None
         self.E0 = None
         self.Ei = None
-        self.σ0 = None
+        self.sigma0 = None
         self.kv0 = None
         self.Cc = None
         self.Ck = None
         self.result = None
 
-    def calculate(self, clay, water, compression, density, pore_style, Ei=None, Cc=None, Ck=None):
+    def calculate(self, clay, water, compression, density, pore_style, ei=None, cc=None, ck=None):
         self.type_sol = clay
         self.pores_sol = water
-        self.compress_sol = self.σv = compression
+        self.compress_sol = self.sigma_v = compression
         self.density_sol = density
-        self.Ei = Ei
-        self.Cc = Cc
-        self.Ck = Ck
+        self.Ei = ei
+        self.Cc = cc
+        self.Ck = ck
 
         try:
-            if self.Ei == None:
+            if self.Ei is None:
                 if pore_style == "W":
                     self.formula13a()
                 elif pore_style == "ρf":
@@ -35,19 +35,19 @@ class FormulaClay:
             self.formula12()
             self.formula14()
             self.formula15()
-            if self.Cc == None:
+            if self.Cc is None:
                 self.formula16()
-            if self.Ck == None:
+            if self.Ck is None:
                 self.formula17()
             self.formula11()
         except (ZeroDivisionError, OverflowError) as e:
             raise e
 
-        return (self.result, self.Ei, self.Cc, self.Ck, self.E0, self.σ0, self.kv0, self.σv)
+        return self.result, self.Ei, self.Cc, self.Ck, self.E0, self.sigma0, self.kv0, self.sigma_v
 
     def formula11(self):
         exponent = -(self.Cc / self.Ck)
-        base = self.σv/self.σ0
+        base = self.sigma_v / self.sigma0
         self.result = self.kv0 * base ** exponent
 
 
@@ -73,11 +73,11 @@ class FormulaClay:
         numerator = self.E0 - 0.0049 * self.type_sol - 0.82
         denominator = -0.00063 * self.type_sol - 0.06
         exponent = numerator / denominator
-        self.σ0 = 2 * math.exp(exponent)
+        self.sigma0 = 2 * math.exp(exponent)
 
     def formula15(self):
         exponent = -0.077 * self.type_sol + (-0.05 * self.type_sol + 20.5) * self.E0
-        self.kv0 = 3* 1.1 * (10 ** (-12)) * math.exp(exponent) # ajout de *3 
+        self.kv0 = 3 * 1.1 * (10 ** (-12)) * math.exp(exponent)
 
     def formula16(self):
         self.Cc = 0.74 * math.log10(self.E0) + 0.22
