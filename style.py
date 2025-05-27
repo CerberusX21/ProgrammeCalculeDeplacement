@@ -7,7 +7,7 @@ APP_STYLE = """
 }
 
     QLabel {
-        font-weight: 600;
+        font-weight: 500;
         color: #333;
         padding: 5px;
         font-family: "Segoe UI";
@@ -82,7 +82,7 @@ APP_STYLE = """
         font-size: 16px;
         color: #0d6efd;
         min-height: 60px;
-        max-height: 60px;
+        max-height: 70px;
         qproperty-alignment: 'AlignLeft';
     }
 

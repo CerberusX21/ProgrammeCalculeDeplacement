@@ -1,3 +1,5 @@
+import math
+
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QCheckBox, QLabel, QHBoxLayout
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -69,11 +71,9 @@ class GraphViewer(QWidget):
 
             ax.plot([sigma_0, sigma_0], [ei, e0], 'b--')
 
-            delta = sigma_v - sigma_0
-            pente = -1 / cc
-            e1 = e0 + pente * delta
+            e = e0 - cc * math.log10(sigma_v/sigma_0)
 
-            line, = ax.plot([sigma_0, sigma_v], [e0, e1], 'k-', marker='o')
+            line, = ax.plot([sigma_0, sigma_v], [e0, e], 'k-', marker='o')
 
             ax.set_title("Effective Stress")
             ax.set_xlabel("Effective Stress (σ') [kPa]")
@@ -93,9 +93,7 @@ class GraphViewer(QWidget):
             yf = self.graph_data["e0"]
             ck = self.graph_data["ck"]
 
-            delta_k = xf - xi
-            pente = ck
-            yi = yf - pente * delta_k
+            yi = yf + ck * math.log10(xi/xf)
 
             line, = ax.plot([xi, xf], [yi, yf], 'k-', marker='o')
 

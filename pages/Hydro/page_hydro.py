@@ -9,7 +9,6 @@ from formulas.hydraulique.FormulaLiquid import FormulaLiquid
 from formulas.hydraulique.FormulaD50ff import FormulaD50ff
 from pages.Hydro.graph_viewer_hydro import GraphViewer
 
-
 class HydroPage(QWidget):
     def __init__(self):
         super().__init__()
