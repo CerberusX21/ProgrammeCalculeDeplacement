@@ -24,25 +24,7 @@ def parametre_result_inter(widget1, widget2):
     row.setStretch(1, 0)
     row.setStretch(2, 1)
     row.setStretch(3, 2)
+    widget2.setSizePolicy(QSizePolicy.Policy.Fixed, widget2.sizePolicy().verticalPolicy())
     container = QWidget()
     container.setLayout(row)
     return container
-
-def parametre_result_combo(checkbox, combo_box):
-    row = QHBoxLayout()
-    row.setContentsMargins(0, 0, 0, 0)
-    row.setSpacing(10)
-
-    checkbox.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-    row.addWidget(checkbox, 1)
-
-    combo_box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-    row.addWidget(combo_box, 3)
-
-    row.setAlignment(checkbox, Qt.AlignmentFlag.AlignVCenter)
-    row.setAlignment(combo_box, Qt.AlignmentFlag.AlignVCenter)
-
-    container = QWidget()
-    container.setLayout(row)
-    return container
-

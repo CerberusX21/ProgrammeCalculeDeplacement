@@ -31,8 +31,8 @@ class ClassificationSol:
         
         if type_sol == "clay%":
             if not (0 < self.valeur_sol <= 100):
-                raise ValueError("La valeur de clay% doit être entre 0 et 100.")
-            
+                raise ValueError("The value of clay% must be between 0 and 100.")
+
             seuil = 0.01 * self.valeur_sol + 0.9
             diff = self.ei_star - seuil
             
@@ -45,8 +45,8 @@ class ClassificationSol:
         
         elif type_sol == "wL":
             if not (0 < self.valeur_sol <= 100):
-                raise ValueError("La valeur de wL doit être entre 0 et 100.")
-            
+                raise ValueError("The value of wL must be between 0 and 100.")
+
             seuil = 0.01 * self.valeur_sol + 0.61
             diff = self.ei_star - seuil
             
@@ -59,8 +59,8 @@ class ClassificationSol:
         
         elif type_sol == "d50ff":
             if not (0.001 <= self.valeur_sol <= 0.1):
-                raise ValueError("La valeur de d50ff doit être entre 0.001 et 0.1 mm.")
-            
+                raise ValueError("The value of d50ff must be between 0.001 and 0.1 mm.")
+
             seuil = 0.17 * math.log(self.valeur_sol) + 1.98
             diff = self.ei_star - seuil
             
@@ -72,4 +72,4 @@ class ClassificationSol:
                 return 1  # Ice-Poor (Ei* < 0.17*ln(d50ff) + 1.98 - marge)
         
         else:
-            raise ValueError("Type de sol invalide. Attendu : clay%, wL ou d50ff.")
+            raise ValueError("Invalid soil type. Expected: clay%, wL or d50ff.")

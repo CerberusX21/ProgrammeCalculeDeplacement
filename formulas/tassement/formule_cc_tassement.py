@@ -14,7 +14,7 @@ class CalculCcStar:
 
     def calculer(self) -> float:
         if self.ei_star <= 0:
-            raise ValueError("ei* doit être strictement positif pour le calcul du log.")
+            raise ValueError("ei* must be strictly positive for the log calculation.")
         log_ei = math.log10(self.ei_star)
         # Ice-Poor (1)
         if self.etat == 1:
@@ -25,25 +25,24 @@ class CalculCcStar:
             if self.type == "wL":
                 cc_star = (0.0081 * self.valeur - 0.019) * log_ei + (0.0033 * self.valeur + 0.037) # Cc* = (0.0081 * wL - 0.019) * log(ei*) + (0.0033 * wL + 0.037)
             elif self.type == "clay%":
-                cc_star = (0.0051 * self.valeur - 0.018) * log_ei + (0.0015 * self.valeur + 0.096)
+                cc_star = (0.0051 * self.valeur - 0.18) * log_ei + (0.0015 * self.valeur + 0.096)
             elif self.type == "d50ff":
                 if self.valeur <= 0:
-                    raise ValueError("d50ff doit être > 0 pour calculer log.")
-                log_d50 = math.log(self.valeur)
+                    raise ValueError("d50ff must be > 0 to calculate log.")
+                log_d50 = math.log10(self.valeur)
                 cc_star = (-0.11 * log_d50 + 0.080) * log_ei + (-0.097 * log_d50 - 0.082)
             else:
-                raise ValueError("Type de sol inconnu : attendu 'clay%', 'wL', ou 'd50ff'.")
+                raise ValueError("Unknown soil type: expected 'clay%', 'wL', or 'd50ff'.")
         else:
-            raise ValueError("État du sol non reconnu : attendu IR ou IP.")
+            raise ValueError("Unrecognized soil state: expected IR or IP.")
 
         # --- Vérification du seuil minimal autorisé ---
         seuil = self.seuil_minimal()
 
         if cc_star <= seuil:
             raise ValueError(
-                f"Cc* = {cc_star:.6f} est inférieur au seuil minimal autorisé ({seuil:.6f}) pour le type de sol {self.type}."
+                f"Cc* = {cc_star:.6f} is inferior to the minimum authorized threshold ({seuil:.6f}) for soil type {self.type}."
             )
-        print (cc_star)
 
         return cc_star
 
@@ -54,7 +53,7 @@ class CalculCcStar:
             return 0.001 * self.valeur + 0.05
         elif self.type == "d50ff":
             if self.valeur <= 0:
-                raise ValueError("d50ff doit être > 0 pour évaluer le seuil.")
+                raise ValueError("d50ff must be > 0 to evaluate the threshold.")
             return -0.04 * math.log(self.valeur) - 0.14
         else:
-            raise ValueError("Type de sol invalide pour évaluation du seuil.")
+            raise ValueError("Invalid soil type for threshold evaluation.")

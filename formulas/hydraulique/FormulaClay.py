@@ -77,7 +77,7 @@ class FormulaClay:
 
     def formula15(self):
         exponent = -0.077 * self.type_sol + (-0.05 * self.type_sol + 20.5) * self.E0
-        self.kv0 = 1.1 * (10 ** (-12)) * math.exp(exponent)
+        self.kv0 = 3 * 1.1 * (10 ** (-12)) * math.exp(exponent)
 
     def formula16(self):
         self.Cc = 0.74 * math.log10(self.E0) + 0.22

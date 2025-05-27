@@ -67,19 +67,18 @@ class GraphViewer(QWidget):
             e0 = self.graph_data["e0"]
             cc = self.graph_data["cc"]
 
-            ax.plot([sigma_0, sigma_0], [ei, e0], 'b--', label="Drainage")
+            ax.plot([sigma_0, sigma_0], [ei, e0], 'b--')
 
             delta = sigma_v - sigma_0
             pente = -1 / cc
             e1 = e0 + pente * delta
 
-            line, = ax.plot([sigma_0, sigma_v], [e0, e1], 'k-', marker='o', label="Compression curve")
+            line, = ax.plot([sigma_0, sigma_v], [e0, e1], 'k-', marker='o')
 
             ax.set_title("Effective Stress")
             ax.set_xlabel("Effective Stress (σ') [kPa]")
             ax.set_ylabel("Void Ratio (e)")
             ax.grid(True)
-            ax.legend()
 
             self.lines.append(line)
             self.axes.append(ax)
@@ -98,13 +97,12 @@ class GraphViewer(QWidget):
             pente = ck
             yi = yf - pente * delta_k
 
-            line, = ax.plot([xi, xf], [yi, yf], 'k-', marker='o', label="Conductivity curve")
+            line, = ax.plot([xi, xf], [yi, yf], 'k-', marker='o')
 
             ax.set_title("Hydraulic Conductivity")
             ax.set_xlabel("Hydraulic Conductivity (k) [m/s]")
             ax.set_ylabel("Void Ratio (e)")
             ax.grid(True)
-            ax.legend()
 
             self.lines.append(line)
             self.axes.append(ax)

@@ -12,7 +12,7 @@ class CalculTassements:
 
     def calculer(self):
         if self.ef + 1 == 0:
-            raise ValueError("Division par zéro dans le calcul du tassement.")
+            raise ValueError("Division by zero is not allowed in the settlement calculation.")
 
         s1 = (self.ef - self.e0_star) / (1 + self.ef) * 100
         s2 = (self.e0_star - self.e_final) / (1 + self.ef) * 100
