@@ -13,9 +13,9 @@ class CalculIndiceDesVides:
 
     def calculer(self) -> float:
         if self.sigma_v <= 0:
-            raise ValueError("La contrainte verticale σ′ᵥ doit être strictement positive.")
+            raise ValueError("The vertical stress σ′ᵥ must be strictly positive.")
         if self.sigma0 <= 0:
-            raise ValueError("La contrainte initiale σ′₀ doit être strictement positive.")
-        
+            raise ValueError("The initial stress σ′₀ must be strictly positive.")
+
         ratio = self.sigma_v / self.sigma0
         return self.e0_star - self.cc_star * math.log10(ratio)

@@ -16,6 +16,7 @@ class CalculE0Tassement:
 
         elif self.etat == 0:  # Ice-Rich
             exponent = (self.cc_star - 0.22) / 0.74
+            
             return 10 ** exponent
 
         else:

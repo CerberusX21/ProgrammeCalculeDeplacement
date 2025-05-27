@@ -18,27 +18,33 @@ class CalculSigma0:
         if self.type_sol == "wL":
             num = self.e0_star - 0.014 * self.valeur - 0.42
             denom = -0.0014 * self.valeur - 0.012
+            if denom == 0:
+                raise ValueError("Division by zero is not allowed.")
             sigma0 = math.exp(num / denom)
 
         elif self.type_sol == "clay%":
             num = self.e0_star - 0.0049 * self.valeur - 0.82
             denom = -0.00063 * self.valeur - 0.060
+            if denom == 0:
+                raise ValueError("Division by zero is not allowed.")
             sigma0 = math.exp(num / denom)
 
         elif self.type_sol == "d50ff":
             if self.valeur <= 0:
-                raise ValueError("d50ff doit être supérieur à zéro pour le log.")
+                raise ValueError("d50ff must be greater than zero for the log.")
             log_d50 = math.log(self.valeur)
             num = self.e0_star + 0.25 * log_d50 - 0.45
             denom = 0.020 * log_d50 - 0.060
+            if denom == 0:
+                raise ValueError("Division by zero is not allowed.")
             sigma0 = math.exp(num / denom)
 
         else:
-            raise ValueError("Type de sol invalide. Attendu : wL, clay% ou d50ff.")
+            raise ValueError("Soil type is invalid. Expected: wL, clay% or d50ff.")
 
         # --- Application des seuils selon l'état du sol ---
         if self.etat_sol == 1:  # Ice-Poor
-            sigma0 = min(50, sigma0)
+            sigma0 = max(1, min(50, sigma0))
 
         elif self.etat_sol == 0:  # Ice-Rich
             sigma0 = max(1, min(50, sigma0))
