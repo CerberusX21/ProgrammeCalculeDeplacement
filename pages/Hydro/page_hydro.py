@@ -232,6 +232,8 @@ class HydroPage(QWidget):
         ]:
             check_box.setChecked(False)
             input_widget.setEnabled(False)
+            input_widget.clear()
 
         self.result_label.setText("Result:")
         self.graph_viewer.clear_graph()
+        self.graph_data = None
