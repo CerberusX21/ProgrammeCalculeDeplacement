@@ -34,7 +34,7 @@ class TassementPage(QWidget):
 
         self._assemble_layout()
 
-        # ⚠️ Connecteurs après la définition des méthodes
+        
         self.calculate_button.clicked.connect(lambda: self.calculate(self.result_label))
         self.reset_button.clicked.connect(self.reset)
 
@@ -70,9 +70,12 @@ class TassementPage(QWidget):
         self.result_type_sol_choice.addItems(["Ice-Rich", "Ice-Poor"])
         self.result_type_sol_choice.setCurrentIndex(-1)
         self.result_type_sol_choice.setEnabled(False)
+        self.result_type_sol_choice.setMinimumWidth(150)
+        self.result_type_sol_choice.setMaximumWidth(150)
         self.result_type_sol_check.stateChanged.connect(
             lambda state: self.result_type_sol_choice.setEnabled(state == Qt.CheckState.Checked.value)
         )
+        
 
         self.layout.addRow("Soil type:", parametre(self.type_sol_unit, self.type_sol, self.type_sol_input))
         self.layout.addRow("Pore type:", parametre(self.pores_sol_unit, self.pores_sol, self.pores_input))
@@ -81,6 +84,7 @@ class TassementPage(QWidget):
         self.layout.addRow("Result Ei:", parametre_result_inter(self.result_EI_check, self.result_EI_input))
         self.layout.addRow("Result Cc*:", parametre_result_inter(self.result_Cc_check, self.result_Cc_input))
         self.layout.addRow("Result soil:", parametre_result_inter(self.result_type_sol_check, self.result_type_sol_choice))
+       
 
     def _assemble_layout(self):
         left_layout = QVBoxLayout()
@@ -116,14 +120,15 @@ class TassementPage(QWidget):
         return edit, checkbox
 
     def _adjust_combo_box_widths(self):
+    
         for combo in [self.type_sol, self.type_sol_unit,
                       self.pores_sol, self.pores_sol_unit,
                       self.compress_sol, self.compress_sol_unit,
                       self.result_type_sol_choice]:
-            combo.setMinimumWidth(80)
-            combo.setMaximumWidth(120)
-            combo.setFixedHeight(28)
-
+            combo.setMinimumWidth(150) 
+            combo.setMaximumWidth(150)  
+            combo.setMinimumHeight(25)
+        
     def _init_unit_mappings(self):
         self.type_unit_mapping = {
             self.type_sol: {"clay%": ["%"], "wL": ["%"], "d50ff": ["mm"]},
@@ -187,6 +192,7 @@ class TassementPage(QWidget):
             QMessageBox.critical(self, "Value Error", "Please enter valid numerical values.")
             return
 
+        # Validation des entrées
         validations = [
             (data["type_sol_valeur"], self.type_sol_unit, self.type_sol.currentText()),
             (data["valeur_pore"], self.pores_sol_unit, self.pores_sol.currentText()),
@@ -206,12 +212,13 @@ class TassementPage(QWidget):
             return
 
         try:
+            # 1. Calcul ei*
             ei_star_calc = EI_Tassement(data["valeur_pore"], data["Gs"], data["type_pore"]).calculer()
             ei_star = float(self.result_EI_input.text()) if self.result_EI_check.isChecked() else ei_star_calc
             if not self.result_EI_check.isChecked():
-                self.result_EI_input.setText(f"{ei_star:.2f}")
+                self.result_EI_input.setText(f"{ei_star:.3f}")
 
-            cc_star = float(self.result_Cc_input.text()) if self.result_Cc_check.isChecked() else None
+            # 2. Classification (IR ou IP)
             classification = ClassificationSol(ei_star, data["type_sol_valeur"], data["type_sol"])
             code_etat = classification.classer()
             if code_etat == -1:
@@ -220,6 +227,7 @@ class TassementPage(QWidget):
             detected_type = CLASSE_SOL[code_etat]
             result_label.setText(f"Soil type : {detected_type}")
 
+            # 3. Surcharge type sol si cochée
             if self.result_type_sol_check.isChecked():
                 code_etat = 0 if self.result_type_sol_choice.currentText() == "Ice-Rich" else 1
             elif code_etat == 2:
@@ -230,33 +238,45 @@ class TassementPage(QWidget):
 
             if not self.result_type_sol_check.isChecked():
                 self.result_type_sol_choice.setCurrentIndex(0 if code_etat == 0 else 1)
-
             if self.result_type_sol_choice.currentIndex() == -1:
                 QMessageBox.warning(self, "Selection Required", "Please select a soil type.")
                 return
 
-            if cc_star is None:
+            # 4. Cc* (manuel ou automatique)
+            if self.result_Cc_check.isChecked():
+                try:
+                    cc_star = float(self.result_Cc_input.text())
+                except ValueError:
+                    QMessageBox.warning(self, "Invalid Cc*", "Please enter a valid number for Cc*.")
+                    return
+            else:
                 cc_star = CalculCcStar(ei_star, data["type_sol_valeur"], data["type_sol"], code_etat).calculer()
-                self.result_Cc_input.setText(f"{cc_star:.6f}")
+                self.result_Cc_input.setText(f"{cc_star:.3f}")
 
+            # 5. Calculs restants
             e0_star = CalculE0Tassement(ei_star, cc_star, code_etat).calculer()
             sigma0 = CalculSigma0(e0_star, data["type_sol"], data["type_sol_valeur"], code_etat).calculer()
             indice_vides = CalculIndiceDesVides(e0_star, cc_star, data["sigma_v"], sigma0).calculer()
             ef = data["valeur_pore"] if data["type_pore"] == "ef*" else ei_star * 1.09
             s1, s2, s_total = CalculTassements(ef, e0_star, indice_vides).calculer()
 
+            # 6. Affichage texte
             result_label.setText(
                 f"Result: Total settlement S = {s_total:.2f} %\n"
                 f"Settlement S1 (ice melt) = {s1:.2f} %\n"
                 f"Settlement S2 (compression) = {s2:.2f} %"
             )
 
+            # 7. Mise à jour du graphique
             self.graph_viewer.set_is_tassement(True)
             self.graph_viewer.set_ei_value(ei_star)
-            self.graph_viewer.set_graph_data(self.register(s_total, ei_star, cc_star, e0_star, sigma0, indice_vides, s1, s2))
+            self.graph_viewer.set_graph_data(self.register(
+                s_total, ei_star, cc_star, e0_star, sigma0, indice_vides, s1, s2
+            ))
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Calcul error: {e}")
+
 
     def reset(self):
         for input_widget in [
