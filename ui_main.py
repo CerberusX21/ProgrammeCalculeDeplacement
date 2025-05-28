@@ -11,8 +11,14 @@ class Window(QWidget):
         self.setStyleSheet(APP_STYLE)
 
         self.tabs = QTabWidget()
-        self.tabs.addTab(HydroPage(), "Hydraulic Conductivity")
-        self.tabs.addTab(TassementPage(), "Settlement")
+        self.hydro_page = HydroPage()
+        self.tassement_page = TassementPage()
+        self.tabs.addTab(self.hydro_page, "Hydraulic Conductivity")
+        self.tabs.addTab(self.tassement_page, "Settlement")
+
+        # Synchronisation entre les deux pages pour avoir  les valeurs automatiquement 
+        self.hydro_page.set_other_page(self.tassement_page)
+        self.tassement_page.set_other_page(self.hydro_page)
 
         layout = QVBoxLayout()
         layout.setContentsMargins(40, 30, 40, 30)

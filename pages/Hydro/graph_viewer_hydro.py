@@ -6,6 +6,7 @@ from matplotlib.figure import Figure
 import numpy as np
 
 
+
 class GraphViewer(QWidget):
     def __init__(self):
         super().__init__()
@@ -69,7 +70,7 @@ class GraphViewer(QWidget):
             e0 = self.graph_data["e0"]
             cc = self.graph_data["cc"]
 
-            ax.plot([sigma_0, sigma_0], [ei, e0], 'b--')
+          
 
             e = e0 - cc * math.log10(sigma_v/sigma_0)
 
