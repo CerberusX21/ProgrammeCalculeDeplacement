@@ -4,6 +4,7 @@ from matplotlib.figure import Figure
 import numpy as np
 import math
 
+
 class GraphViewer(QWidget):
     def __init__(self):
         super().__init__()
@@ -37,6 +38,7 @@ class GraphViewer(QWidget):
         self.axes = []
 
         self.canvas.mpl_connect("motion_notify_event", self.mouse_move)
+
 
     def set_graph_data(self, graph_data):
         self.graph_data = graph_data

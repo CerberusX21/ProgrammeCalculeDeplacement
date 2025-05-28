@@ -7,7 +7,7 @@ APP_STYLE = """
 }
 
     QLabel {
-        font-weight: 500;
+        font-weight: 600;
         color: #333;
         padding: 5px;
         font-family: "Segoe UI";
@@ -22,6 +22,7 @@ APP_STYLE = """
         min-width: 150px;   
         margin: 0px;
         min-height: 20px;
+        font-size: 13px;
     }
 
     QComboBox {
@@ -82,7 +83,7 @@ APP_STYLE = """
         font-size: 16px;
         color: #0d6efd;
         min-height: 60px;
-        max-height: 70px;
+        max-height: 60px;
         qproperty-alignment: 'AlignLeft';
     }
 
@@ -149,10 +150,36 @@ APP_STYLE = """
     }
 
     #parameterLabel {
-        color: #333;
-        font-size: 18px;
+        background-color: #0d6efd;
+        color: white;
+        font-size: 25px;
         font-family: "Segoe UI";
-        padding: 4px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+    
+    QGroupBox#modernGroupBox {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1e3a8a;
+        margin-top: 8px;
+        padding-top: 12px;
+        background-color: #f8fafc;
+        border: 1px solid #3b82f6;
+        border-radius: 8px;
+    }
+    
+    QGroupBox#modernGroupBox::title {
+        subcontrol-origin: margin;
+        left: 10px;
+        padding: 3px 10px;
+        background-color: #0d6efd;
+        color: white;
+        border: 1px solid #0d6efd;
+        border-radius: 4px;
+        font-weight: 700;
+        font-size: 19px;
     }
    
 """
