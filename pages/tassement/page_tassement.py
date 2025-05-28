@@ -77,9 +77,9 @@ class TassementPage(QWidget):
         )
         
 
-        self.layout.addRow("Soil type:", parametre(self.type_sol_unit, self.type_sol, self.type_sol_input))
-        self.layout.addRow("Pore type:", parametre(self.pores_sol_unit, self.pores_sol, self.pores_input))
-        self.layout.addRow("Compression:", parametre(self.compress_sol_unit, self.compress_sol, self.compress_input))
+        self.layout.addRow("Soil type:", parametre(self.type_sol, self.type_sol_unit, self.type_sol_input))
+        self.layout.addRow("Pore type:", parametre(self.pores_sol, self.pores_sol_unit, self.pores_input))
+        self.layout.addRow("Compression:", parametre(self.compress_sol, self.compress_sol_unit, self.compress_input))
         self.layout.addRow("Gs type:", self.density_input)
         self.layout.addRow("Result Ei:", parametre_result_inter(self.result_EI_check, self.result_EI_input))
         self.layout.addRow("Result Cc*:", parametre_result_inter(self.result_Cc_check, self.result_Cc_input))

@@ -166,3 +166,12 @@ class GraphViewer(QWidget):
 
         self.coord_label.setText(coord_text if updated else "Coordinates:")
         self.canvas.draw_idle()
+
+    def clear_graph(self):
+        self.graph_data = None
+        self.figure.clear()
+        self.canvas.draw()
+        self.lines.clear()
+        self.axes.clear()
+        self.follow_dots.clear()
+        self.coord_label.setText("Coordinates:")
