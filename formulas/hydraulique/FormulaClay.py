@@ -26,11 +26,11 @@ class FormulaClay:
 
         try:
             if self.Ei is None:
-                if pore_style == "W":
+                if pore_style == "Thawed soil initial water content":
                     self.formula13a()
-                elif pore_style == "ρf":
+                elif pore_style == "Frozen buld density":
                     self.formula13b()
-                elif pore_style == "ef*":
+                elif pore_style == "Frozen void ratio":
                     self.formula13c()
             self.formula12()
             self.formula14()

@@ -1,12 +1,8 @@
 from PyQt6.QtWidgets import (
-    QWidget, QFormLayout, QLineEdit, QComboBox, QCheckBox, QLabel,
-    QVBoxLayout, QHBoxLayout, QPushButton, QMessageBox, QSizePolicy,
-    QFrame, QGridLayout, QScrollArea
+    QWidget, QLineEdit, QComboBox, QLabel,
+    QVBoxLayout, QPushButton, QMessageBox, QFrame, QGridLayout, QSizePolicy
 )
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont
-from widgets.widgets_parametre import parametre
-from widgets.widgets_parametre import parametre_result_inter
 from pages.tassement.graph_viewer_tassement import GraphViewer
 from style import APP_STYLE
 from widgets.modern_widgets import ModernParameterWidget, ModernGroupBox
@@ -19,7 +15,7 @@ from formulas.tassement.formule_sigma0 import CalculSigma0
 from formulas.tassement.formule_calculer_tassement import CalculTassements
 from formulas.tassement.formule_indice_des_vides import CalculIndiceDesVides
 from formulas.tassement.formule_ip_ir_tassement import CLASSE_SOL
-from pages.Hydro.hydro_layout import assemble_hydro_layout, init_unit_mappings, init_input_limits
+from pages.soil_parameter import assemble_hydro_layout, init_unit_mappings, init_input_limits
 
 
 class TassementPage(QWidget):
@@ -30,8 +26,8 @@ class TassementPage(QWidget):
         self._custom_ei_edited = False
         self._custom_cc_edited = False
         self._custom_type_edited = False
-        self.setMinimumSize(1400, 900)
-        self.resize(1600, 1000)
+        self.setMinimumSize(800, 600)  # Minimum size for usability
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setStyleSheet(APP_STYLE)
 
         self._init_widgets()
@@ -79,41 +75,51 @@ class TassementPage(QWidget):
         self._set_value_column_width(120)
 
         self.type_sol = QComboBox()
-        self.type_sol.addItems(["clay%", "wL", "d50ff"])
+        self.type_sol.setProperty("type", "type")
+        self.type_sol.addItems(["Clay percentage", "Liquid limit", "Fine fraction median diameter"])
         self.type_sol_unit = QComboBox()
 
         self.pores_sol = QComboBox()
-        self.pores_sol.addItems(["W", "ρf", "ef*"])
+        self.pores_sol.setProperty("type", "type")
+        self.pores_sol.addItems(["Thawed soil initial water content", "Frozen buld density", "Frozen void ratio"])
         self.pores_sol_unit = QComboBox()
 
         self.compress_sol = QComboBox()
-        self.compress_sol.addItems(["σ′v"])
+        self.compress_sol.setProperty("type", "type")
+        self.compress_sol.addItems(["Effective vertical stress"])
         self.compress_sol_unit = QComboBox()
 
         self.density_sol = QComboBox()
-        self.density_sol.addItems(["Gs"])
+        self.density_sol.setProperty("type", "type")
+        self.density_sol.addItems(["Specific gravity of solids"])
         self.density_sol_unit = QComboBox()
         self.density_sol_unit.addItems(["-"])
 
         # Results widgets
         self.result_EI_input = self._create_line_edit("Value...")
+        self.result_EI_input.setProperty("custom", "true")
         self.result_Cc_input = self._create_line_edit("Value...")
+        self.result_Cc_input.setProperty("custom", "true")
 
         self.result_EI_type = QComboBox()
+        self.result_EI_type.setProperty("type", "type")
         self.result_EI_type.addItems(["ei*"])
         self.result_EI_unit = QComboBox()
         self.result_EI_unit.addItems(["-"])
 
         self.result_Cc_type = QComboBox()
+        self.result_Cc_type.setProperty("type", "type")
         self.result_Cc_type.addItems(["Cc*"])
         self.result_Cc_unit = QComboBox()
         self.result_Cc_unit.addItems(["-"])
 
         self.result_type_sol_choice = QComboBox()
+        self.result_type_sol_choice.setProperty("type", "type")
         self.result_type_sol_choice.addItems(["Ice-Rich", "Ice-Poor"])
         self.result_type_sol_choice.setCurrentIndex(0)
 
         self.result_type_sol_type = QComboBox()
+        self.result_type_sol_type.setProperty("type", "type")
         self.result_type_sol_type.addItems(["Ice content"])
         self.result_type_sol_unit = QComboBox()
         self.result_type_sol_unit.addItems(["-"])
@@ -260,7 +266,7 @@ class TassementPage(QWidget):
                 'type_sol_valeur': float(self.type_sol_input.text()),
                 'valeur_pore': float(self.pores_input.text()),
                 'sigma_v': float(self.compress_input.text()),
-                'Gs': float(self.density_input.text()),
+                'Specific gravity of solids': float(self.density_input.text()),
                 'type_pore': self.pores_sol.currentText(),
                 'type_sol': self.type_sol.currentText()
             }
@@ -273,7 +279,7 @@ class TassementPage(QWidget):
             (data["type_sol_valeur"], self.type_sol_unit, self.type_sol.currentText()),
             (data["valeur_pore"], self.pores_sol_unit, self.pores_sol.currentText()),
             (data["sigma_v"], self.compress_sol_unit, self.compress_sol.currentText()),
-            (data["Gs"], False, "Gs")
+            (data["Specific gravity of solids"], False, "Specific gravity of solids")
         ]
         for value, unit_combo, label in validations:
             valid, min_val, max_val = self.validate_input(value, unit_combo)
@@ -284,13 +290,14 @@ class TassementPage(QWidget):
 
         if self.pores_sol_unit.currentText() == "kg/m³":
             data["valeur_pore"] /= 1000
-        if data["type_pore"] == "ρf" and data["valeur_pore"] >= data["Gs"]:
-            QMessageBox.warning(self, "Invalid value", "Make sure Gs > ρf")
+        if data["type_pore"] == "Frozen buld density" and data["valeur_pore"] >= data["Specific gravity of solids"]:
+            print('test')
+            QMessageBox.warning(self, "Invalid value", "Make sure Specific gravity of solids > Frozen buld density")
             return
 
         try:
             # 1. Calcul ei*
-            ei_star_calc = EI_Tassement(data["valeur_pore"], data["Gs"], data["type_pore"]).calculer()
+            ei_star_calc = EI_Tassement(data["valeur_pore"], data["Specific gravity of solids"], data["type_pore"]).calculer()
             # 2. Classification (IR ou IP)
             classification = ClassificationSol(ei_star_calc, data["type_sol_valeur"], data["type_sol"])
             code_etat = classification.classer()
@@ -344,7 +351,7 @@ class TassementPage(QWidget):
             e0_star = CalculE0Tassement(ei_star, cc_star, code_etat).calculer()
             sigma0 = CalculSigma0(e0_star, data["type_sol"], data["type_sol_valeur"], code_etat).calculer()
             indice_vides = CalculIndiceDesVides(e0_star, cc_star, data["sigma_v"], sigma0).calculer()
-            ef = data["valeur_pore"] if data["type_pore"] == "ef*" else ei_star * 1.09
+            ef = data["valeur_pore"] if data["type_pore"] == "Frozen void ratio" else ei_star * 1.09
             s1, s2, s_total = CalculTassements(ef, e0_star, indice_vides).calculer()
 
             # 5. Affichage texte (toujours)

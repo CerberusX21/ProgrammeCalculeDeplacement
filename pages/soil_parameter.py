@@ -28,17 +28,21 @@ QComboBox {
     font-size: 12px;
     max-height: 20px;
     min-height: 20px;
-    max-width: 75px;
     min-width: 75px;
+    max-width: 75px;
     padding: 2px 4px;
     margin: 1px;
+}
+QComboBox[type="type"] {
+    max-width: 200px;
+    min-width: 200px;
 }
 QLineEdit {
     font-size: 12px;
     max-height: 20px;
     min-height: 20px;
-    max-width: 75px;
     min-width: 75px;
+    max-width: 75px;
     padding: 2px 4px;
     margin: 1px;
 }
@@ -67,15 +71,25 @@ QPushButton {
     min-width: 70px;
     margin: 2px;
 }
+
+/* Custom results specific styles */
+QComboBox[custom="true"] {
+    min-width: 200px;
+    max-width: 200px;
+}
+QLineEdit[custom="true"] {
+    min-width: 75px;
+    max-width: 75px;
+}
 """
 
 def init_unit_mappings(self):
     """Initialize the unit mappings that are common to both pages"""
     self.type_unit_mapping = {
-        self.type_sol: {"clay%": ["%"], "wL": ["%"], "d50ff": ["mm"]},
-        self.pores_sol: {"W": ["kg/kg"], "ρf": ["kg/m³", "g/cm³"], "ef*": ["Direct"]},
-        self.compress_sol: {"σ′v": ["kPa"]},
-        self.density_sol: {"Gs": ["-"]}
+        self.type_sol: {"Clay percentage": ["%"], "Liquid limit": ["%"], "Fine fraction median diameter": ["mm"]},
+        self.pores_sol: {"Thawed soil initial water content": ["kg/kg"], "Frozen buld density": ["kg/m³", "g/cm³"], "Frozen void ratio": ["Direct"]},
+        self.compress_sol: {"Effective vertical stress": ["kPa"]},
+        self.density_sol: {"Specific gravity of solids": ["-"]}
     }
 
 
@@ -100,62 +114,59 @@ def assemble_hydro_layout(self):
     
     main_layout = QHBoxLayout()
     main_layout.setSpacing(4)
-    main_layout.setContentsMargins(4, 4, 4, 4)
+    main_layout.setContentsMargins(2, 4, 2, 4)
 
     # --- Parameters Panel (Left) ---
     parameters_widget = QWidget()
     parameters_layout = QVBoxLayout(parameters_widget)
     parameters_layout.setSpacing(4)
-    parameters_layout.setContentsMargins(4, 4, 4, 4)
+    parameters_layout.setContentsMargins(2, 4, 2, 4)
 
     # Parameters Group (without title)
-    soil_group = ModernGroupBox("")  # Empty title
+    soil_group = ModernGroupBox("")
     soil_layout = QVBoxLayout()
-    soil_layout.setSpacing(12)  # Increased spacing between parameter sections
-    soil_layout.setContentsMargins(8, 8, 8, 8)
+    soil_layout.setSpacing(12)
+    soil_layout.setContentsMargins(4, 8, 4, 8)
 
     # Helper function to create parameter section with label above widgets
     def add_parameter_section(layout, label, widget_type, widget_unit, widget_value):
         section = QVBoxLayout()
-        section.setSpacing(0)  # Remove spacing between elements within section
+        section.setSpacing(4)
+        section.setContentsMargins(2, 0, 2, 0)
         
         # Add main parameter label
         label_widget = QLabel(label)
         label_widget.setProperty("class", "parameter-label")
         section.addWidget(label_widget)
         
-        # Create grid layout for perfect alignment
+        # Create grid layout for the widgets
         grid = QGridLayout()
-        grid.setSpacing(2)  # Reduced spacing between elements
+        grid.setSpacing(4)
         grid.setContentsMargins(0, 0, 0, 0)
         
-        # Add headers to grid
+        # Add headers
         type_header = QLabel("Type")
         value_header = QLabel("Value")
         unit_header = QLabel("Unit")
         
-        # Set fixed widths for all components
-        widget_width = 75
-        for widget in [widget_type, widget_value, widget_unit]:
-            widget.setFixedWidth(widget_width)
-        
         for header in [type_header, value_header, unit_header]:
-            header.setFixedWidth(widget_width)
-            header.setAlignment(Qt.AlignmentFlag.AlignCenter)
             header.setProperty("class", "column-header")
+            header.setAlignment(Qt.AlignmentFlag.AlignLeft)
         
-        # Add headers to first row
+        # Add headers to grid
         grid.addWidget(type_header, 0, 0)
         grid.addWidget(value_header, 0, 1)
         grid.addWidget(unit_header, 0, 2)
         
-        # Add widgets to second row, with reduced vertical spacing
+        # Add widgets to grid
         grid.addWidget(widget_type, 1, 0)
         grid.addWidget(widget_value, 1, 1)
         grid.addWidget(widget_unit, 1, 2)
         
-        # Add stretch to maintain left alignment
-        grid.setColumnStretch(3, 1)
+        # Set column stretches for responsive layout
+        grid.setColumnStretch(0, 4)  # Type column gets more space
+        grid.setColumnStretch(1, 1)  # Value column
+        grid.setColumnStretch(2, 1)  # Unit column
         
         section.addLayout(grid)
         layout.addLayout(section)
@@ -176,7 +187,7 @@ def assemble_hydro_layout(self):
     self.use_custom_params_check = QCheckBox("Use custom results")
     custom_checkbox_widget = QWidget()
     custom_checkbox_layout = QHBoxLayout(custom_checkbox_widget)
-    custom_checkbox_layout.setContentsMargins(4, 4, 4, 4)
+    custom_checkbox_layout.setContentsMargins(2, 4, 2, 4)
     custom_checkbox_layout.setSpacing(4)
     custom_checkbox_layout.addWidget(self.use_custom_params_check)
     custom_checkbox_layout.addStretch()
@@ -197,14 +208,15 @@ def assemble_hydro_layout(self):
     button_layout.addStretch()
     parameters_layout.addLayout(button_layout)
 
-    # Set fixed width for parameters panel to ensure consistency between pages
-    parameters_widget.setFixedWidth(400)
+    # Make parameters panel responsive with minimum width
+    parameters_widget.setMinimumWidth(400)
+    parameters_widget.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
 
     # --- Results Panel (Right) ---
     results_panel = QWidget()
     results_panel.setObjectName("resultsPanel")
     results_layout_right = QVBoxLayout(results_panel)
-    results_layout_right.setContentsMargins(4, 4, 4, 4)
+    results_layout_right.setContentsMargins(2, 4, 2, 4)
     results_layout_right.setSpacing(4)
 
     results_title = QLabel("Hydraulic Results")
@@ -217,13 +229,102 @@ def assemble_hydro_layout(self):
     results_layout_right.addWidget(graph_title)
     results_layout_right.addWidget(self.graph_viewer)
 
+    # Make results panel expand to fill available space
+    results_panel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
     # --- Main layout ---
     main_layout.addWidget(parameters_widget)
-    main_layout.addWidget(results_panel)
+    main_layout.addWidget(results_panel, stretch=1)
     self.setLayout(main_layout)
 
-    # Ensure the graph viewer expands to fill available space
-    self.graph_viewer.setSizePolicy(
-        QSizePolicy.Policy.Expanding,
-        QSizePolicy.Policy.Expanding
-    )
+def _setup_custom_results(self):
+    # Create the custom results group
+    self.results_group = ModernGroupBox("")  # Empty title for consistency
+    results_layout = QVBoxLayout()
+    results_layout.setSpacing(12)  # Match soil parameters spacing
+    results_layout.setContentsMargins(4, 8, 4, 8)  # Match soil parameters margins
+
+    # Helper function to create parameter section with label above widgets
+    def add_custom_parameter_section(layout, label, widget_type, widget_unit, widget_value):
+        section = QVBoxLayout()
+        section.setSpacing(4)
+        section.setContentsMargins(2, 0, 2, 0)
+        
+        # Add main parameter label
+        label_widget = QLabel(label)
+        label_widget.setProperty("class", "parameter-label")
+        section.addWidget(label_widget)
+        
+        # Create grid layout for the widgets
+        grid = QGridLayout()
+        grid.setSpacing(4)
+        grid.setContentsMargins(0, 0, 0, 0)
+        
+        # Add headers
+        type_header = QLabel("Type")
+        value_header = QLabel("Value")
+        unit_header = QLabel("Unit")
+        
+        for header in [type_header, value_header, unit_header]:
+            header.setProperty("class", "column-header")
+            header.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        
+        # Add headers to grid
+        grid.addWidget(type_header, 0, 0)
+        grid.addWidget(value_header, 0, 1)
+        grid.addWidget(unit_header, 0, 2)
+        
+        # Add widgets to grid
+        grid.addWidget(widget_type, 1, 0)
+        grid.addWidget(widget_value, 1, 1)
+        grid.addWidget(widget_unit, 1, 2)
+        
+        # Set column stretches for responsive layout
+        grid.setColumnStretch(0, 4)  # Type column gets more space
+        grid.setColumnStretch(1, 1)  # Value column
+        grid.setColumnStretch(2, 1)  # Unit column
+        
+        section.addLayout(grid)
+        layout.addLayout(section)
+
+    # Add the parameters
+    if hasattr(self, 'result_EI_input'):
+        add_custom_parameter_section(
+            results_layout,
+            "Initial thawed void ratio",
+            self.result_EI_type, self.result_EI_unit, self.result_EI_input
+        )
+
+    if hasattr(self, 'result_Cc_input'):
+        add_custom_parameter_section(
+            results_layout,
+            "Thawed soil compression index",
+            self.result_Cc_type, self.result_Cc_unit, self.result_Cc_input
+        )
+
+    if hasattr(self, 'result_Ck_input'):
+        add_custom_parameter_section(
+            results_layout,
+            "Hydraulic conductivity index",
+            self.result_Ck_type, self.result_Ck_unit, self.result_Ck_input
+        )
+
+    if hasattr(self, 'result_type_sol_choice'):
+        add_custom_parameter_section(
+            results_layout,
+            "Ice content classification",
+            self.result_type_sol_type, self.result_type_sol_unit, self.result_type_sol_choice
+        )
+    
+    self.results_group.setLayout(results_layout)
+    self.results_group.setVisible(False)
+
+    # Add to main layout
+    main_layout = self.layout()
+    if main_layout:
+        left_widget = main_layout.itemAt(0).widget()
+        if left_widget:
+            left_layout = left_widget.layout()
+            if left_layout:
+                # Insert before the button layout (which is the last item)
+                left_layout.insertWidget(left_layout.count() - 1, self.results_group)

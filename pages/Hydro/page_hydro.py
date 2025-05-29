@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QComboBox, QLineEdit,
-    QLabel, QPushButton, QMessageBox, QCheckBox, QSizePolicy, QGridLayout, QFrame
+    QWidget, QVBoxLayout, QComboBox, QLineEdit,
+    QLabel, QPushButton, QMessageBox, QCheckBox, QGridLayout, QFrame, QSizePolicy
 )
 from PyQt6.QtCore import Qt
 from style import APP_STYLE
@@ -8,7 +8,7 @@ from pages.Hydro.graph_viewer_hydro import GraphViewer
 from formulas.hydraulique.FormulaClay import FormulaClay
 from formulas.hydraulique.FormulaLiquid import FormulaLiquid
 from formulas.hydraulique.FormulaD50ff import FormulaD50ff
-from pages.Hydro.hydro_layout import assemble_hydro_layout, init_unit_mappings, init_input_limits
+from pages.soil_parameter import assemble_hydro_layout, init_unit_mappings, init_input_limits
 from widgets.modern_widgets import ModernParameterWidget, ModernGroupBox
 
 
@@ -16,7 +16,8 @@ class HydroPage(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.resize(1600, 1000)
+        self.setMinimumSize(800, 600)  # Minimum size for usability
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setStyleSheet(APP_STYLE)
         self._other_page = None
         self._syncing = False
@@ -96,25 +97,51 @@ class HydroPage(QWidget):
         self._set_value_column_width(120)
 
         self.type_sol = QComboBox()
-        self.type_sol.addItems(["clay%", "wL", "d50ff"])
+        self.type_sol.setProperty("type", "type")
+        self.type_sol.addItems(["Clay percentage", "Liquid limit", "Fine fraction median diameter"])
         self.type_sol_unit = QComboBox()
 
         self.pores_sol = QComboBox()
-        self.pores_sol.addItems(["W", "ρf", "ef*"])
+        self.pores_sol.setProperty("type", "type")
+        self.pores_sol.addItems(["Thawed soil initial water content", "Frozen buld density", "Frozen void ratio"])
         self.pores_sol_unit = QComboBox()
 
         self.compress_sol = QComboBox()
-        self.compress_sol.addItems(["σ′v"])
+        self.compress_sol.setProperty("type", "type")
+        self.compress_sol.addItems(["Effective vertical stress"])
         self.compress_sol_unit = QComboBox()
 
-        self.result_EI_input, self.result_EI_check = self._create_optional_input("Value...")
-        self.result_Cc_input, self.result_Cc_check = self._create_optional_input("Value...")
-        self.result_Ck_input, self.result_Ck_check = self._create_optional_input("Value...")
-
         self.density_sol = QComboBox()
-        self.density_sol.addItems(["Gs"])
+        self.density_sol.setProperty("type", "type")
+        self.density_sol.addItems(["Specific gravity of solids"])
         self.density_sol_unit = QComboBox()
         self.density_sol_unit.addItems(["-"])
+
+        # Results widgets
+        self.result_EI_input = self._create_line_edit("Value...")
+        self.result_EI_input.setProperty("custom", "true")
+        self.result_Cc_input = self._create_line_edit("Value...")
+        self.result_Cc_input.setProperty("custom", "true")
+        self.result_Ck_input = self._create_line_edit("Value...")
+        self.result_Ck_input.setProperty("custom", "true")
+
+        self.result_EI_type = QComboBox()
+        self.result_EI_type.setProperty("type", "type")
+        self.result_EI_type.addItems(["ei*"])
+        self.result_EI_unit = QComboBox()
+        self.result_EI_unit.addItems(["-"])
+
+        self.result_Cc_type = QComboBox()
+        self.result_Cc_type.setProperty("type", "type")
+        self.result_Cc_type.addItems(["Cc*"])
+        self.result_Cc_unit = QComboBox()
+        self.result_Cc_unit.addItems(["-"])
+
+        self.result_Ck_type = QComboBox()
+        self.result_Ck_type.setProperty("type", "type")
+        self.result_Ck_type.addItems(["Ck*"])
+        self.result_Ck_unit = QComboBox()
+        self.result_Ck_unit.addItems(["-"])
 
         # Connect combo box changes
         self.type_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('type_sol', idx))
@@ -125,21 +152,6 @@ class HydroPage(QWidget):
         self.compress_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('compress_sol_unit', idx))
         self.density_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('density_sol', idx))
         self.density_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('density_sol_unit', idx))
-
-        self.result_EI_type = QComboBox()
-        self.result_EI_type.addItems(["ei*"])
-        self.result_EI_unit = QComboBox()
-        self.result_EI_unit.addItems(["-"])
-
-        self.result_Cc_type = QComboBox()
-        self.result_Cc_type.addItems(["Cc*"])
-        self.result_Cc_unit = QComboBox()
-        self.result_Cc_unit.addItems(["-"])
-
-        self.result_Ck_type = QComboBox()
-        self.result_Ck_type.addItems(["Ck*"])
-        self.result_Ck_unit = QComboBox()
-        self.result_Ck_unit.addItems(["-"])
 
     def _create_line_edit(self, placeholder):
         edit = QLineEdit()
@@ -206,7 +218,7 @@ class HydroPage(QWidget):
             (data["type_sol"], self.type_sol_unit, self.type_sol.currentText()),
             (data["pores_sol"], self.pores_sol_unit, self.pores_sol.currentText()),
             (data["compress_sol"], self.compress_sol_unit, self.compress_sol.currentText()),
-            (data["density_sol"], False, "Gs")
+            (data["density_sol"], False, "Specific gravity of solids")
         ]
 
         for value, unit_combo, label in validations:
@@ -219,11 +231,15 @@ class HydroPage(QWidget):
         if self.pores_sol_unit.currentText() == "g/cm3":
             data["pores_sol"] /= 1000
 
-        if self.pores_sol.currentText() == "ρf" and data["pores_sol"] >= data["density_sol"]:
-            QMessageBox.warning(self, "Invalid value", "Make sure Gs > ρf")
+        if self.pores_sol.currentText() == "Frozen buld density" and data["pores_sol"] >= data["density_sol"]:
+            QMessageBox.warning(self, "Invalid value", "Make sure Specific gravity of solids > Frozen buld density")
             return
 
-        formula_class = {"clay%": FormulaClay, "wL": FormulaLiquid, "d50ff": FormulaD50ff}.get(data["type"])
+        formula_class = {
+            "Clay percentage": FormulaClay,
+            "Liquid limit": FormulaLiquid,
+            "Fine fraction median diameter": FormulaD50ff
+        }.get(data["type"])
 
         # For custom values
         if self.use_custom_params_check.isChecked():
