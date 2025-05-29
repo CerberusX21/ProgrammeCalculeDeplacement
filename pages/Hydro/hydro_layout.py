@@ -1,8 +1,73 @@
 from PyQt6.QtWidgets import (
-    QHBoxLayout, QVBoxLayout, QGridLayout, QFrame, QLabel, QCheckBox, QWidget
+    QHBoxLayout, QVBoxLayout, QGridLayout, QFrame, QLabel, QCheckBox, QWidget, QPushButton, QSizePolicy
 )
 from PyQt6.QtCore import Qt
 from widgets.modern_widgets import ModernParameterWidget, ModernGroupBox
+
+# Add compact styling constants
+COMPACT_STYLE = """
+QLabel {
+    font-size: 12px;
+    padding: 1px;
+    margin: 1px;
+}
+QLabel.column-header {
+    font-size: 10px;
+    color: #666666;
+    font-weight: 400;
+    padding: 0px;
+    margin: 0px 0px 0px 0px;
+}
+QLabel.parameter-label {
+    font-size: 14px;
+    font-weight: bold;
+    padding: 0px;
+    margin: 0px;
+}
+QComboBox {
+    font-size: 12px;
+    max-height: 20px;
+    min-height: 20px;
+    max-width: 75px;
+    min-width: 75px;
+    padding: 2px 4px;
+    margin: 1px;
+}
+QLineEdit {
+    font-size: 12px;
+    max-height: 20px;
+    min-height: 20px;
+    max-width: 75px;
+    min-width: 75px;
+    padding: 2px 4px;
+    margin: 1px;
+}
+ModernGroupBox {
+    font-size: 12px;
+    padding: 8px;
+    margin: 2px;
+    border: 1px solid #007bff;
+}
+ModernGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0;
+    margin: 0;
+    color: transparent;
+    background: transparent;
+    border: none;
+}
+QCheckBox {
+    font-size: 12px;
+    padding: 2px;
+    margin: 2px;
+}
+QPushButton {
+    padding: 2px 8px;
+    min-width: 70px;
+    margin: 2px;
+}
+"""
 
 def init_unit_mappings(self):
     """Initialize the unit mappings that are common to both pages"""
@@ -30,95 +95,117 @@ def init_input_limits(self):
 
 
 def assemble_hydro_layout(self):
+    # Apply compact styling
+    self.setStyleSheet(COMPACT_STYLE)
+    
     main_layout = QHBoxLayout()
-
-    def make_headers():
-        headers_layout = QGridLayout()
-        headers_layout.addWidget(QLabel("<b>Parameter</b>"), 0, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
-        headers_layout.addWidget(QLabel("<b>Type</b>"), 0, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
-        headers_layout.addWidget(QLabel("<b>Unit</b>"), 0, 2, alignment=Qt.AlignmentFlag.AlignHCenter)
-        headers_layout.addWidget(QLabel("<b>Value</b>"), 0, 3, alignment=Qt.AlignmentFlag.AlignHCenter)
-        headers_layout.setColumnStretch(0, 3)
-        headers_layout.setColumnStretch(1, 2)
-        headers_layout.setColumnStretch(2, 1)
-        headers_layout.setColumnStretch(3, 2)
-        return headers_layout
-
-    def make_separator():
-        sep = QFrame()
-        sep.setFrameShape(QFrame.Shape.HLine)
-        sep.setStyleSheet("background-color: #e2e8f0; height: 1px;")
-        return sep
+    main_layout.setSpacing(4)
+    main_layout.setContentsMargins(4, 4, 4, 4)
 
     # --- Parameters Panel (Left) ---
     parameters_widget = QWidget()
     parameters_layout = QVBoxLayout(parameters_widget)
-    parameters_layout.setSpacing(12)
-    parameters_layout.setContentsMargins(10, 10, 10, 10)
+    parameters_layout.setSpacing(4)
+    parameters_layout.setContentsMargins(4, 4, 4, 4)
 
-    # Soil Parameters Group
-    soil_group = ModernGroupBox("Soil Parameters")
+    # Parameters Group (without title)
+    soil_group = ModernGroupBox("")  # Empty title
     soil_layout = QVBoxLayout()
-    soil_layout.addLayout(make_headers())
+    soil_layout.setSpacing(12)  # Increased spacing between parameter sections
+    soil_layout.setContentsMargins(8, 8, 8, 8)
 
-    # Soil Type Parameter
-    soil_layout.addWidget(make_separator())
-    soil_layout.addWidget(ModernParameterWidget(
-        "Soil Type Parameter",
-        self.type_sol, self.type_sol_unit, self.type_sol_input
-    ))
+    # Helper function to create parameter section with label above widgets
+    def add_parameter_section(layout, label, widget_type, widget_unit, widget_value):
+        section = QVBoxLayout()
+        section.setSpacing(0)  # Remove spacing between elements within section
+        
+        # Add main parameter label
+        label_widget = QLabel(label)
+        label_widget.setProperty("class", "parameter-label")
+        section.addWidget(label_widget)
+        
+        # Create grid layout for perfect alignment
+        grid = QGridLayout()
+        grid.setSpacing(2)  # Reduced spacing between elements
+        grid.setContentsMargins(0, 0, 0, 0)
+        
+        # Add headers to grid
+        type_header = QLabel("Type")
+        value_header = QLabel("Value")
+        unit_header = QLabel("Unit")
+        
+        # Set fixed widths for all components
+        widget_width = 75
+        for widget in [widget_type, widget_value, widget_unit]:
+            widget.setFixedWidth(widget_width)
+        
+        for header in [type_header, value_header, unit_header]:
+            header.setFixedWidth(widget_width)
+            header.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            header.setProperty("class", "column-header")
+        
+        # Add headers to first row
+        grid.addWidget(type_header, 0, 0)
+        grid.addWidget(value_header, 0, 1)
+        grid.addWidget(unit_header, 0, 2)
+        
+        # Add widgets to second row, with reduced vertical spacing
+        grid.addWidget(widget_type, 1, 0)
+        grid.addWidget(widget_value, 1, 1)
+        grid.addWidget(widget_unit, 1, 2)
+        
+        # Add stretch to maintain left alignment
+        grid.setColumnStretch(3, 1)
+        
+        section.addLayout(grid)
+        layout.addLayout(section)
 
-    # Pore-Ice Parameter
-    soil_layout.addWidget(make_separator())
-    soil_layout.addWidget(ModernParameterWidget(
-        "Pore-Ice Parameter",
-        self.pores_sol, self.pores_sol_unit, self.pores_input
-    ))
-
-    # Compression Parameter
-    soil_layout.addWidget(make_separator())
-    soil_layout.addWidget(ModernParameterWidget(
-        "Soil Compression Parameter",
-        self.compress_sol, self.compress_sol_unit, self.compress_input
-    ))
-
-    # Specific Gravity Parameter
-    soil_layout.addWidget(make_separator())
-    soil_layout.addWidget(ModernParameterWidget(
-        "Specific gravity of solids",
-        self.density_sol, self.density_sol_unit, self.density_input
-    ))
+    # Add parameters with consistent spacing
+    add_parameter_section(soil_layout, "Soil Type Parameter", 
+                        self.type_sol, self.type_sol_unit, self.type_sol_input)
+    add_parameter_section(soil_layout, "Pore-Ice Parameter",
+                        self.pores_sol, self.pores_sol_unit, self.pores_input)
+    add_parameter_section(soil_layout, "Soil Compression Parameter",
+                        self.compress_sol, self.compress_sol_unit, self.compress_input)
+    add_parameter_section(soil_layout, "Specific gravity of solids",
+                        self.density_sol, self.density_sol_unit, self.density_input)
 
     soil_group.setLayout(soil_layout)
 
-    # Custom results checkbox
+    # Custom results checkbox with minimal spacing
     self.use_custom_params_check = QCheckBox("Use custom results")
     custom_checkbox_widget = QWidget()
     custom_checkbox_layout = QHBoxLayout(custom_checkbox_widget)
-    custom_checkbox_layout.setContentsMargins(0, 8, 0, 2)
-    custom_checkbox_layout.setAlignment(self.use_custom_params_check, Qt.AlignmentFlag.AlignLeft)
+    custom_checkbox_layout.setContentsMargins(4, 4, 4, 4)
+    custom_checkbox_layout.setSpacing(4)
     custom_checkbox_layout.addWidget(self.use_custom_params_check)
-    custom_checkbox_widget.setMaximumWidth(600)
+    custom_checkbox_layout.addStretch()
 
-    # Add groups to layout
+    # Add groups to layout with minimal spacing
     parameters_layout.addWidget(soil_group)
     parameters_layout.addWidget(custom_checkbox_widget)
+    parameters_layout.addStretch()
 
-    # Buttons
+    # Buttons with consistent sizing
     button_layout = QHBoxLayout()
-    button_layout.setSpacing(10)
+    button_layout.setSpacing(8)
     button_layout.addStretch()
+    self.reset_button.setFixedWidth(70)
+    self.calculate_button.setFixedWidth(70)
     button_layout.addWidget(self.reset_button)
     button_layout.addWidget(self.calculate_button)
     button_layout.addStretch()
     parameters_layout.addLayout(button_layout)
 
+    # Set fixed width for parameters panel to ensure consistency between pages
+    parameters_widget.setFixedWidth(400)
+
     # --- Results Panel (Right) ---
     results_panel = QWidget()
     results_panel.setObjectName("resultsPanel")
     results_layout_right = QVBoxLayout(results_panel)
-    results_layout_right.setContentsMargins(10, 10, 10, 10)
-    results_layout_right.setSpacing(10)
+    results_layout_right.setContentsMargins(4, 4, 4, 4)
+    results_layout_right.setSpacing(4)
 
     results_title = QLabel("Hydraulic Results")
     results_title.setObjectName("resultsTitle")
@@ -131,6 +218,12 @@ def assemble_hydro_layout(self):
     results_layout_right.addWidget(self.graph_viewer)
 
     # --- Main layout ---
-    main_layout.addWidget(parameters_widget, 1)
-    main_layout.addWidget(results_panel, 1)
+    main_layout.addWidget(parameters_widget)
+    main_layout.addWidget(results_panel)
     self.setLayout(main_layout)
+
+    # Ensure the graph viewer expands to fill available space
+    self.graph_viewer.setSizePolicy(
+        QSizePolicy.Policy.Expanding,
+        QSizePolicy.Policy.Expanding
+    )

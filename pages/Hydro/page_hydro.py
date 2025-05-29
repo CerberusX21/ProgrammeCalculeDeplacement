@@ -15,7 +15,8 @@ from widgets.modern_widgets import ModernParameterWidget, ModernGroupBox
 class HydroPage(QWidget):
     def __init__(self):
         super().__init__()
-        self.setMinimumSize(1400, 900)
+        
+        self.resize(1600, 1000)
         self.setStyleSheet(APP_STYLE)
         self._other_page = None
         self._syncing = False
@@ -124,10 +125,6 @@ class HydroPage(QWidget):
         self.compress_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('compress_sol_unit', idx))
         self.density_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('density_sol', idx))
         self.density_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('density_sol_unit', idx))
-
-        self.result_EI_input = self._create_line_edit("Value...")
-        self.result_Cc_input = self._create_line_edit("Value...")
-        self.result_Ck_input = self._create_line_edit("Value...")
 
         self.result_EI_type = QComboBox()
         self.result_EI_type.addItems(["ei*"])

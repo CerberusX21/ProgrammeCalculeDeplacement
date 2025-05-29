@@ -32,13 +32,51 @@ class TassementPage(QWidget):
         self._custom_type_edited = False
         self.setMinimumSize(1400, 900)
         self.resize(1600, 1000)
+        self.setStyleSheet(APP_STYLE)
 
-        # --- Create soil parameter widgets just like Hydro ---
+        self._init_widgets()
+        
+        # Initialize common mappings and limits from hydro_layout
+        init_unit_mappings(self)
+        init_input_limits(self)
+        self._connect_unit_updates()
+        self._set_initial_units()
+        
+        self.result_label = QLabel("Result:")
+        self.result_label.setObjectName("ResultLabel")
+        self.calculate_button = QPushButton("Calculate")
+        self.reset_button = QPushButton("Reset")
+        self.graph_viewer = GraphViewer()
+        
+        # Set up the main layout first
+        assemble_hydro_layout(self)
+        
+        # Add the settlement-specific custom results section
+        self._setup_custom_results()
+        
+        # Connect signals
+        self.calculate_button.clicked.connect(lambda: self.calculate(self.result_label))
+        self.reset_button.clicked.connect(self.reset)
+        
+        # For syncing data between pages
+        self.type_sol_input.textChanged.connect(self._sync_type_sol)
+        self.pores_input.textChanged.connect(self._sync_pores)
+        self.compress_input.textChanged.connect(self._sync_compress)
+        self.density_input.textChanged.connect(self._sync_density)
+        
+        # Manual input detection
+        self.result_EI_input.textEdited.connect(self._on_custom_ei_edited)
+        self.result_Cc_input.textEdited.connect(self._on_custom_cc_edited)
+        self.use_custom_params_check.stateChanged.connect(self._on_custom_check_changed)
+        self.use_custom_params_check.stateChanged.connect(self._toggle_custom_params)
+
+    def _init_widgets(self):
         self.type_sol_input = self._create_line_edit("Value...")
         self.pores_input = self._create_line_edit("Value...")
         self.compress_input = self._create_line_edit("Value...")
         self.density_input = self._create_line_edit("Value...")
         self.density_input.setText("2.67")
+        self._set_value_column_width(120)
 
         self.type_sol = QComboBox()
         self.type_sol.addItems(["clay%", "wL", "d50ff"])
@@ -57,17 +95,7 @@ class TassementPage(QWidget):
         self.density_sol_unit = QComboBox()
         self.density_sol_unit.addItems(["-"])
 
-        # Connect combo box changes
-        self.type_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('type_sol', idx))
-        self.type_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('type_sol_unit', idx))
-        self.pores_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('pores_sol', idx))
-        self.pores_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('pores_sol_unit', idx))
-        self.compress_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('compress_sol', idx))
-        self.compress_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('compress_sol_unit', idx))
-        self.density_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('density_sol', idx))
-        self.density_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('density_sol_unit', idx))
-
-        # --- Results and custom widgets ---
+        # Results widgets
         self.result_EI_input = self._create_line_edit("Value...")
         self.result_Cc_input = self._create_line_edit("Value...")
 
@@ -81,124 +109,48 @@ class TassementPage(QWidget):
         self.result_Cc_unit = QComboBox()
         self.result_Cc_unit.addItems(["-"])
 
-        # Dummy widgets for compatibility with hydro_layout (not used in settlement)
-        self.result_Ck_type = QComboBox()
-        self.result_Ck_type.addItems(["Ck*"])
-        self.result_Ck_unit = QComboBox()
-        self.result_Ck_unit.addItems(["-"])
-        self.result_Ck_input = self._create_line_edit("Value...")
-
         self.result_type_sol_choice = QComboBox()
         self.result_type_sol_choice.addItems(["Ice-Rich", "Ice-Poor"])
         self.result_type_sol_choice.setCurrentIndex(0)
 
-        # Settlement-specific custom result widgets
         self.result_type_sol_type = QComboBox()
         self.result_type_sol_type.addItems(["Ice content"])
         self.result_type_sol_unit = QComboBox()
         self.result_type_sol_unit.addItems(["-"])
 
-        self.use_custom_params_check = QCheckBox("Use custom results")
+        # Connect combo box changes
+        self.type_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('type_sol', idx))
+        self.type_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('type_sol_unit', idx))
+        self.pores_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('pores_sol', idx))
+        self.pores_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('pores_sol_unit', idx))
+        self.compress_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('compress_sol', idx))
+        self.compress_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('compress_sol_unit', idx))
+        self.density_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('density_sol', idx))
+        self.density_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('density_sol_unit', idx))
 
-        self.result_label = QLabel("Result:")
-        self.result_label.setObjectName("ResultLabel")
-        self.calculate_button = QPushButton("Calculate")
-        self.reset_button = QPushButton("Reset")
-        self.graph_viewer = GraphViewer()
+    def _setup_custom_results(self):
+        # Create the custom results group
+        self.results_group = ModernGroupBox("Settlement Custom Parameters")
+        results_layout = QVBoxLayout()
+        results_layout.setSpacing(6)
 
-        # Initialize common mappings and limits from hydro_layout
-        init_unit_mappings(self)
-        init_input_limits(self)
-        self._connect_unit_updates()
-        self._set_initial_units()
-        self._adjust_combo_box_widths()
+        # Headers
+        headers_layout = QGridLayout()
+        headers_layout.addWidget(QLabel("<b>Parameter</b>"), 0, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
+        headers_layout.addWidget(QLabel("<b>Type</b>"), 0, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
+        headers_layout.addWidget(QLabel("<b>Unit</b>"), 0, 2, alignment=Qt.AlignmentFlag.AlignHCenter)
+        headers_layout.addWidget(QLabel("<b>Value</b>"), 0, 3, alignment=Qt.AlignmentFlag.AlignHCenter)
+        headers_layout.setColumnStretch(0, 3)
+        headers_layout.setColumnStretch(1, 2)
+        headers_layout.setColumnStretch(2, 1)
+        headers_layout.setColumnStretch(3, 2)
 
-        # --- Use the hydro layout for the common parameters section ---
-        assemble_hydro_layout(self)
-        
-        # --- Add the settlement-specific custom results section ---
-        self._assemble_modern_layout()
+        # Separator
+        separator = QFrame()
+        separator.setFrameShape(QFrame.Shape.HLine)
+        separator.setStyleSheet("background-color: #e2e8f0; height: 1px;")
 
-        self._apply_modern_styles()
-
-        self.calculate_button.clicked.connect(lambda: self.calculate(self.result_label))
-        self.reset_button.clicked.connect(self.reset)
-
-        # Synchronisation des champs principaux
-        self.type_sol_input.textChanged.connect(self._sync_type_sol)
-        self.pores_input.textChanged.connect(self._sync_pores)
-        self.compress_input.textChanged.connect(self._sync_compress)
-        self.density_input.textChanged.connect(self._sync_density)
-
-        # Détection de saisie manuelle custom
-        self.result_EI_input.textEdited.connect(self._on_custom_ei_edited)
-        self.result_Cc_input.textEdited.connect(self._on_custom_cc_edited)
-        self.use_custom_params_check.stateChanged.connect(self._on_custom_check_changed)
-
-    def _setup_ui(self):
-
-        self._set_value_column_width(120)
-
-
-        self.result_EI_input = self._create_line_edit("Value...")
-        self.result_Cc_input = self._create_line_edit("Value...")
-
-        self.result_type_sol_choice = QComboBox()
-        self.result_type_sol_choice.addItems(["Ice-Rich", "Ice-Poor"])
-        self.result_type_sol_choice.setCurrentIndex(0)
-
-        # Checkbox pour afficher/masquer les paramètres personnalisés
-        self.use_custom_params_check = QCheckBox("Use custom results")
-
-        same_width = 120  # ajuste si besoin
-        self.result_EI_input.setMinimumWidth(same_width)
-        self.result_EI_input.setMaximumWidth(same_width)
-        self.result_Cc_input.setMinimumWidth(same_width)
-        self.result_Cc_input.setMaximumWidth(same_width)
-        self.result_type_sol_choice.setMinimumWidth(same_width)
-        self.result_type_sol_choice.setMaximumWidth(same_width)
-
-        self.pores_input.setMinimumWidth(120)  # Ajuste si nécessaire
-        self.pores_input.setMaximumWidth(120)  # Ajuste si nécessaire
-
-        self._set_value_column_width(120)
-
-    def _toggle_custom_params(self, state):
-        is_checked = state == Qt.CheckState.Checked.value
-        if hasattr(self, 'indices_group'):
-            self.indices_group.setVisible(is_checked)
-        
-        # Enable/disable the input fields
-        self.result_EI_input.setEnabled(is_checked)
-        self.result_Cc_input.setEnabled(is_checked)
-        self.result_type_sol_choice.setEnabled(is_checked)
-        
-        # Reset custom edit flags if unchecked
-        if not is_checked:
-            self._custom_ei_edited = False
-            self._custom_cc_edited = False
-            self._custom_type_edited = False
-
-    def _assemble_modern_layout(self):
-        # 5. Indices and Ratios
-        self.indices_group = ModernGroupBox("Settlement Custom Parameters")
-        indices_layout = QVBoxLayout()
-        indices_layout.setSpacing(6)
-
-        indices_headers = QGridLayout()
-        indices_headers.addWidget(QLabel("<b>Parameter</b>"), 0, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
-        indices_headers.addWidget(QLabel("<b>Type</b>"), 0, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
-        indices_headers.addWidget(QLabel("<b>Unit</b>"), 0, 2, alignment=Qt.AlignmentFlag.AlignHCenter)
-        indices_headers.addWidget(QLabel("<b>Value</b>"), 0, 3, alignment=Qt.AlignmentFlag.AlignHCenter)
-        indices_headers.setColumnStretch(0, 3)
-        indices_headers.setColumnStretch(1, 2)
-        indices_headers.setColumnStretch(2, 1)
-        indices_headers.setColumnStretch(3, 2)
-
-        indices_separator = QFrame()
-        indices_separator.setFrameShape(QFrame.Shape.HLine)
-        indices_separator.setStyleSheet("background-color: #e2e8f0; height: 1px;")
-
+        # Add the parameters
         ei_param = ModernParameterWidget(
             "Initial thawed void ratio",
             self.result_EI_type, self.result_EI_unit, self.result_EI_input
@@ -214,17 +166,17 @@ class TassementPage(QWidget):
             self.result_type_sol_type, self.result_type_sol_unit, self.result_type_sol_choice
         )
 
-        indices_layout.addLayout(indices_headers)
-        indices_layout.addWidget(indices_separator)
-        indices_layout.addWidget(ei_param)
-        indices_layout.addWidget(cc_param)
-        indices_layout.addWidget(ice_param)
-        self.indices_group.setLayout(indices_layout)
-
-        # Initially hide the custom parameters
-        self.indices_group.setVisible(False)
+        # Assemble the layout
+        results_layout.addLayout(headers_layout)
+        results_layout.addWidget(separator)
+        results_layout.addWidget(ei_param)
+        results_layout.addWidget(cc_param)
+        results_layout.addWidget(ice_param)
         
-        # Add the custom parameters section to the main layout
+        self.results_group.setLayout(results_layout)
+        self.results_group.setVisible(False)
+
+        # Add to main layout
         main_layout = self.layout()
         if main_layout:
             left_widget = main_layout.itemAt(0).widget()
@@ -232,13 +184,23 @@ class TassementPage(QWidget):
                 left_layout = left_widget.layout()
                 if left_layout:
                     # Insert before the button layout (which is the last item)
-                    left_layout.insertWidget(left_layout.count() - 1, self.indices_group)
+                    left_layout.insertWidget(left_layout.count() - 1, self.results_group)
 
-        # Connect the checkbox to toggle visibility
-        self.use_custom_params_check.stateChanged.connect(self._toggle_custom_params)
-
-    def _apply_modern_styles(self):
-        self.setStyleSheet(APP_STYLE)
+    def _toggle_custom_params(self, state):
+        is_checked = state == Qt.CheckState.Checked.value
+        if hasattr(self, 'results_group'):
+            self.results_group.setVisible(is_checked)
+        
+        # Enable/disable the input fields
+        self.result_EI_input.setEnabled(is_checked)
+        self.result_Cc_input.setEnabled(is_checked)
+        self.result_type_sol_choice.setEnabled(is_checked)
+        
+        # Reset custom edit flags if unchecked
+        if not is_checked:
+            self._custom_ei_edited = False
+            self._custom_cc_edited = False
+            self._custom_type_edited = False
 
     def _create_line_edit(self, placeholder):
         edit = QLineEdit()
