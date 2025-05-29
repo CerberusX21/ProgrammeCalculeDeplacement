@@ -8,7 +8,7 @@ from pages.Hydro.graph_viewer_hydro import GraphViewer
 from formulas.hydraulique.FormulaClay import FormulaClay
 from formulas.hydraulique.FormulaLiquid import FormulaLiquid
 from formulas.hydraulique.FormulaD50ff import FormulaD50ff
-from pages.Hydro.hydro_layout import assemble_hydro_layout
+from pages.Hydro.hydro_layout import assemble_hydro_layout, init_unit_mappings, init_input_limits
 from widgets.modern_widgets import ModernParameterWidget, ModernGroupBox
 
 
@@ -24,8 +24,9 @@ class HydroPage(QWidget):
         self._custom_ck_edited = False
         self.graph_data = None
         self._init_widgets()
-        self._init_unit_mappings()
-        self._init_input_limits()
+        # Initialize common mappings and limits from hydro_layout
+        init_unit_mappings(self)
+        init_input_limits(self)
         self._connect_unit_updates()
         self._set_initial_units()
         self.result_label = QLabel("Result:")
@@ -61,6 +62,13 @@ class HydroPage(QWidget):
         if self._other_page and not self._syncing:
             self._other_page._syncing = True
             getattr(self._other_page, field_name).setText(value)
+            self._other_page._syncing = False
+
+    def _sync_combo(self, combo_name, index):
+        if self._other_page and not self._syncing:
+            self._other_page._syncing = True
+            other_combo = getattr(self._other_page, combo_name)
+            other_combo.setCurrentIndex(index)
             self._other_page._syncing = False
 
     def _on_custom_ei_edited(self):
@@ -107,6 +115,16 @@ class HydroPage(QWidget):
         self.density_sol_unit = QComboBox()
         self.density_sol_unit.addItems(["-"])
 
+        # Connect combo box changes
+        self.type_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('type_sol', idx))
+        self.type_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('type_sol_unit', idx))
+        self.pores_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('pores_sol', idx))
+        self.pores_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('pores_sol_unit', idx))
+        self.compress_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('compress_sol', idx))
+        self.compress_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('compress_sol_unit', idx))
+        self.density_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('density_sol', idx))
+        self.density_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('density_sol_unit', idx))
+
         self.result_EI_input = self._create_line_edit("Value...")
         self.result_Cc_input = self._create_line_edit("Value...")
         self.result_Ck_input = self._create_line_edit("Value...")
@@ -138,23 +156,6 @@ class HydroPage(QWidget):
         edit.setEnabled(False)
         checkbox.stateChanged.connect(lambda state: edit.setEnabled(state == Qt.CheckState.Checked.value))
         return edit, checkbox
-
-    def _init_unit_mappings(self):
-        self.type_unit_mapping = {
-            self.type_sol: {"clay%": ["%"], "wL": ["%"], "d50ff": ["mm"]},
-            self.pores_sol: {"W": ["kg/kg"], "ρf": ["kg/m3", "g/cm3"], "ef*": ["Direct"]},
-            self.compress_sol: {"σ′v": ["kPa"]},
-        }
-
-    def _init_input_limits(self):
-        self.input_limits = {
-            self.type_sol_unit: {"%": (1, 100), "mm": (0.001, 0.1)},
-            self.pores_sol_unit: {
-                "kg/kg": (0, float('inf')), "kg/m3": (900, 3000),
-                "g/cm3": (0.9, 3), "Direct": (0, float('inf'))
-            },
-            self.compress_sol_unit: {"kPa": (0, float('inf'))},
-        }
 
     def _connect_unit_updates(self):
         self.type_sol.currentIndexChanged.connect(lambda: self.update_unit_options(self.type_sol, self.type_sol_unit))

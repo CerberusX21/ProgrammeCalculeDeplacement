@@ -4,6 +4,31 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 from widgets.modern_widgets import ModernParameterWidget, ModernGroupBox
 
+def init_unit_mappings(self):
+    """Initialize the unit mappings that are common to both pages"""
+    self.type_unit_mapping = {
+        self.type_sol: {"clay%": ["%"], "wL": ["%"], "d50ff": ["mm"]},
+        self.pores_sol: {"W": ["kg/kg"], "ρf": ["kg/m³", "g/cm³"], "ef*": ["Direct"]},
+        self.compress_sol: {"σ′v": ["kPa"]},
+        self.density_sol: {"Gs": ["-"]}
+    }
+
+
+def init_input_limits(self):
+    """Initialize the input limits that are common to both pages"""
+    self.input_limits = {
+        self.type_sol_unit: {"%": (1, 100), "mm": (0.001, 0.1)},
+        self.pores_sol_unit: {
+            "kg/kg": (0, float('inf')), 
+            "kg/m³": (900, 3000),
+            "g/cm³": (0.9, 3), 
+            "Direct": (0, float('inf'))
+        },
+        self.compress_sol_unit: {"kPa": (0, float('inf'))},
+        self.density_sol_unit: {"-": (1, 4)}
+    }
+
+
 def assemble_hydro_layout(self):
     main_layout = QHBoxLayout()
 

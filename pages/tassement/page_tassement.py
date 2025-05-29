@@ -19,7 +19,7 @@ from formulas.tassement.formule_sigma0 import CalculSigma0
 from formulas.tassement.formule_calculer_tassement import CalculTassements
 from formulas.tassement.formule_indice_des_vides import CalculIndiceDesVides
 from formulas.tassement.formule_ip_ir_tassement import CLASSE_SOL
-from pages.Hydro.hydro_layout import assemble_hydro_layout
+from pages.Hydro.hydro_layout import assemble_hydro_layout, init_unit_mappings, init_input_limits
 
 
 class TassementPage(QWidget):
@@ -45,7 +45,7 @@ class TassementPage(QWidget):
         self.type_sol_unit = QComboBox()
 
         self.pores_sol = QComboBox()
-        self.pores_sol.addItems(["w", "ρf", "ef*"])
+        self.pores_sol.addItems(["W", "ρf", "ef*"])
         self.pores_sol_unit = QComboBox()
 
         self.compress_sol = QComboBox()
@@ -56,6 +56,16 @@ class TassementPage(QWidget):
         self.density_sol.addItems(["Gs"])
         self.density_sol_unit = QComboBox()
         self.density_sol_unit.addItems(["-"])
+
+        # Connect combo box changes
+        self.type_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('type_sol', idx))
+        self.type_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('type_sol_unit', idx))
+        self.pores_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('pores_sol', idx))
+        self.pores_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('pores_sol_unit', idx))
+        self.compress_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('compress_sol', idx))
+        self.compress_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('compress_sol_unit', idx))
+        self.density_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('density_sol', idx))
+        self.density_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('density_sol_unit', idx))
 
         # --- Results and custom widgets ---
         self.result_EI_input = self._create_line_edit("Value...")
@@ -96,8 +106,9 @@ class TassementPage(QWidget):
         self.reset_button = QPushButton("Reset")
         self.graph_viewer = GraphViewer()
 
-        self._init_unit_mappings()
-        self._init_input_limits()
+        # Initialize common mappings and limits from hydro_layout
+        init_unit_mappings(self)
+        init_input_limits(self)
         self._connect_unit_updates()
         self._set_initial_units()
         self._adjust_combo_box_widths()
@@ -126,30 +137,8 @@ class TassementPage(QWidget):
 
     def _setup_ui(self):
 
-        # self.type_sol_input = self._create_line_edit("Value...")
-        # self.pores_input = self._create_line_edit("Value...")
-        # self.compress_input = self._create_line_edit("Value...")
-        # self.density_input = self._create_line_edit("Value...")
-        # self.density_input.setText("2.67")
-
         self._set_value_column_width(120)
 
-        # self.type_sol = QComboBox()
-        # self.type_sol.addItems(["clay%", "wL", "d50ff"])
-        # self.type_sol_unit = QComboBox()
-
-        # self.pores_sol = QComboBox()
-        # self.pores_sol.addItems(["w", "ρf", "ef*"])
-        # self.pores_sol_unit = QComboBox()
-
-        # self.compress_sol = QComboBox()
-        # self.compress_sol.addItems(["σ′v"])
-        # self.compress_sol_unit = QComboBox()
-
-        # self.density_sol = QComboBox()
-        # self.density_sol.addItems(["Gs"])
-        # self.density_sol_unit = QComboBox()
-        # self.density_sol_unit.addItems(["-"])
 
         self.result_EI_input = self._create_line_edit("Value...")
         self.result_Cc_input = self._create_line_edit("Value...")
@@ -265,25 +254,6 @@ class TassementPage(QWidget):
             combo.setMinimumWidth(100)
             combo.setMaximumWidth(120)
             combo.setMinimumHeight(20)
-
-    def _init_unit_mappings(self):
-        self.type_unit_mapping = {
-            self.type_sol: {"clay%": ["%"], "wL": ["%"], "d50ff": ["mm"]},
-            self.pores_sol: {"w": ["kg/kg"], "ρf": ["kg/m³", "g/cm³"], "ef*": ["Direct"]},
-            self.compress_sol: {"σ′v": ["kPa"]},
-            self.density_sol: {"Gs": ["-"]}
-        }
-
-    def _init_input_limits(self):
-        self.input_limits = {
-            self.type_sol_unit: {"%": (1, 100), "mm": (0.001, 0.1)},
-            self.pores_sol_unit: {
-                "kg/kg": (0, float('inf')), "kg/m³": (900, 3000),
-                "g/cm³": (0.9, 3), "Direct": (0, float('inf'))
-            },
-            self.compress_sol_unit: {"kPa": (0, float('inf'))},
-            self.density_sol_unit: {"-": (1, 4)}
-        }
 
     def _connect_unit_updates(self):
         self.type_sol.currentIndexChanged.connect(lambda: self.update_unit_options(self.type_sol, self.type_sol_unit))
@@ -471,14 +441,6 @@ class TassementPage(QWidget):
         }
 
     def _set_value_column_width(self, width=120):
-        self.result_EI_input.setMinimumWidth(width)
-        self.result_EI_input.setMaximumWidth(width)
-        self.result_Cc_input.setMinimumWidth(width)
-        self.result_Cc_input.setMaximumWidth(width)
-        self.result_type_sol_choice.setMinimumWidth(width)
-        self.result_type_sol_choice.setMaximumWidth(width)
-
-    def _set_value_column_width(self, width=120):
         self.type_sol_input.setMinimumWidth(width)
         self.type_sol_input.setMaximumWidth(width)
         self.pores_input.setMinimumWidth(width)
@@ -499,6 +461,7 @@ class TassementPage(QWidget):
             self.result_Ck_input.setMaximumWidth(width)
 
     def set_other_page(self, other_page):
+        """Set the reference to the other page for synchronization"""
         self._other_page = other_page
 
     def _sync_type_sol(self, value):
@@ -523,6 +486,13 @@ class TassementPage(QWidget):
         if self._other_page and not self._syncing:
             self._other_page._syncing = True
             self._other_page.density_input.setText(value)
+            self._other_page._syncing = False
+
+    def _sync_combo(self, combo_name, index):
+        if self._other_page and not self._syncing:
+            self._other_page._syncing = True
+            other_combo = getattr(self._other_page, combo_name)
+            other_combo.setCurrentIndex(index)
             self._other_page._syncing = False
 
     def _on_custom_ei_edited(self):
