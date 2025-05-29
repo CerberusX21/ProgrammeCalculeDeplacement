@@ -8,7 +8,8 @@ from pages.Hydro.graph_viewer_hydro import GraphViewer
 from formulas.hydraulique.FormulaClay import FormulaClay
 from formulas.hydraulique.FormulaLiquid import FormulaLiquid
 from formulas.hydraulique.FormulaD50ff import FormulaD50ff
-from pages.tassement.page_tassement import ModernParameterWidget, ModernGroupBox
+from pages.Hydro.hydro_layout import assemble_hydro_layout
+from widgets.modern_widgets import ModernParameterWidget, ModernGroupBox
 
 
 class HydroPage(QWidget):
@@ -34,48 +35,43 @@ class HydroPage(QWidget):
         self.reset_button = QPushButton("Reset")
         self.calculate_button.clicked.connect(self.calculate)
         self.reset_button.clicked.connect(self.reset)
-        self._assemble_layout()
-        # Pour syncroniser les données entre les pages
-        self.type_sol_input.textChanged.connect(self._sync_type_sol)
-        self.pores_input.textChanged.connect(self._sync_pores)
-        self.compress_input.textChanged.connect(self._sync_compress)
-        self.density_input.textChanged.connect(self._sync_density)
-        # Détection de saisie manuelle 
+        
+        # Set up the main layout first
+        assemble_hydro_layout(self)
+        
+        # Add the hydro-specific custom results section
+        self._setup_custom_results()
+        
+        # For syncing data between pages
+        self.type_sol_input.textChanged.connect(lambda value: self._sync_field('type_sol_input', value))
+        self.pores_input.textChanged.connect(lambda value: self._sync_field('pores_input', value))
+        self.compress_input.textChanged.connect(lambda value: self._sync_field('compress_input', value))
+        self.density_input.textChanged.connect(lambda value: self._sync_field('density_input', value))
+        # Manual input detection
         self.result_EI_input.textEdited.connect(self._on_custom_ei_edited)
         self.result_Cc_input.textEdited.connect(self._on_custom_cc_edited)
         self.result_Ck_input.textEdited.connect(self._on_custom_ck_edited)
         self.use_custom_params_check.stateChanged.connect(self._on_custom_check_changed)
+        self.use_custom_params_check.stateChanged.connect(self._toggle_custom_params)
 
     def set_other_page(self, other_page):
         self._other_page = other_page
 
-    def _sync_type_sol(self, value):
+    def _sync_field(self, field_name, value):
         if self._other_page and not self._syncing:
             self._other_page._syncing = True
-            self._other_page.type_sol_input.setText(value)
-            self._other_page._syncing = False
-    def _sync_pores(self, value):
-        if self._other_page and not self._syncing:
-            self._other_page._syncing = True
-            self._other_page.pores_input.setText(value)
-            self._other_page._syncing = False
-    def _sync_compress(self, value):
-        if self._other_page and not self._syncing:
-            self._other_page._syncing = True
-            self._other_page.compress_input.setText(value)
-            self._other_page._syncing = False
-    def _sync_density(self, value):
-        if self._other_page and not self._syncing:
-            self._other_page._syncing = True
-            self._other_page.density_input.setText(value)
+            getattr(self._other_page, field_name).setText(value)
             self._other_page._syncing = False
 
     def _on_custom_ei_edited(self):
         self._custom_ei_edited = True
+
     def _on_custom_cc_edited(self):
         self._custom_cc_edited = True
+
     def _on_custom_ck_edited(self):
         self._custom_ck_edited = True
+
     def _on_custom_check_changed(self, state):
         if state == Qt.CheckState.Checked.value:
             self._custom_ei_edited = False
@@ -130,171 +126,6 @@ class HydroPage(QWidget):
         self.result_Ck_unit = QComboBox()
         self.result_Ck_unit.addItems(["-"])
 
-    def _assemble_layout(self):
-        main_layout = QHBoxLayout()
-
-        # --- Paramètres à gauche ---
-        parameters_widget = QWidget()
-        parameters_layout = QVBoxLayout(parameters_widget)
-        parameters_layout.setSpacing(12)
-        parameters_layout.setContentsMargins(10, 10, 10, 10)
-
-        #  our les headers
-        def make_headers():
-            headers_layout = QGridLayout()
-            headers_layout.addWidget(QLabel("<b>Parameter</b>"), 0, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
-            headers_layout.addWidget(QLabel("<b>Type</b>"), 0, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
-            headers_layout.addWidget(QLabel("<b>Unit</b>"), 0, 2, alignment=Qt.AlignmentFlag.AlignHCenter)
-            headers_layout.addWidget(QLabel("<b>Value</b>"), 0, 3, alignment=Qt.AlignmentFlag.AlignHCenter)
-            headers_layout.setColumnStretch(0, 3)
-            headers_layout.setColumnStretch(1, 2)
-            headers_layout.setColumnStretch(2, 1)
-            headers_layout.setColumnStretch(3, 2)
-            return headers_layout
-
-        def make_separator():
-            sep = QFrame()
-            sep.setFrameShape(QFrame.Shape.HLine)
-            sep.setStyleSheet("background-color: #e2e8f0; height: 1px;")
-            return sep
-
-        # Soil group
-        soil_group = ModernGroupBox("Soil Type Parameters")
-        soil_layout = QVBoxLayout()
-        soil_layout.addLayout(make_headers())
-        soil_layout.addWidget(make_separator())
-        soil_param = ModernParameterWidget(
-            "Clay percentage / Liquid limit / Fine fraction",
-            self.type_sol, self.type_sol_unit, self.type_sol_input,
-            "Options: Clay percentage (clay%), Liquid limit (wL), Fine fraction median diameter (d50ff)"
-        )
-        soil_layout.addWidget(soil_param)
-        soil_group.setLayout(soil_layout)
-
-        # Pore group
-        pore_group = ModernGroupBox("Pore-Ice Parameters")
-        pore_layout = QVBoxLayout()
-        pore_layout.addLayout(make_headers())
-        pore_layout.addWidget(make_separator())
-        pore_param = ModernParameterWidget(
-            "Water content / Frozen density / Frozen void ratio",
-            self.pores_sol, self.pores_sol_unit, self.pores_input,
-            "Thawed soil initial water content (W), Frozen bulk density (ρf), Frozen void ratio (ef*)"
-        )
-        pore_layout.addWidget(pore_param)
-        pore_group.setLayout(pore_layout)
-
-        # Compression group
-        compress_group = ModernGroupBox("Soil Compression Parameters")
-        compress_layout = QVBoxLayout()
-        compress_layout.addLayout(make_headers())
-        compress_layout.addWidget(make_separator())
-        compress_param = ModernParameterWidget(
-            "Effective vertical stress",
-            self.compress_sol, self.compress_sol_unit, self.compress_input,
-            "Effective vertical stress (σ'v)"
-        )
-        compress_layout.addWidget(compress_param)
-        compress_group.setLayout(compress_layout)
-
-        # Gs group (Specific Gravity) - même format que Settlement
-        gs_group = ModernGroupBox("Specific Gravity of Solids")
-        gs_layout = QVBoxLayout()
-        gs_layout.addLayout(make_headers())
-        gs_layout.addWidget(make_separator())
-        self.density_sol = QComboBox()
-        self.density_sol.addItems(["Gs"])
-        self.density_sol_unit = QComboBox()
-        self.density_sol_unit.addItems(["-"])
-        gs_param = ModernParameterWidget(
-            "Specific gravity",
-            self.density_sol, self.density_sol_unit, self.density_input,
-            "Specific gravity of soil solids"
-        )
-        gs_layout.addWidget(gs_param)
-        gs_group.setLayout(gs_layout)
-
-        # Checkbox pour paramètres personnalisés
-        self.use_custom_params_check = QCheckBox("Use custom results")
-        self.use_custom_params_check.stateChanged.connect(self._toggle_custom_params)
-        custom_checkbox_widget = QWidget()
-        custom_checkbox_layout = QHBoxLayout(custom_checkbox_widget)
-        custom_checkbox_layout.setContentsMargins(0, 8, 0, 2)
-        custom_checkbox_layout.setAlignment(self.use_custom_params_check, Qt.AlignmentFlag.AlignLeft)
-        custom_checkbox_layout.addWidget(self.use_custom_params_check)
-        custom_checkbox_widget.setMaximumWidth(600)
-
-        # Results group (pour ei*, Cc*, Ck*)
-        results_group = ModernGroupBox("Indices and Ratios")
-        results_layout = QVBoxLayout()
-        results_layout.addLayout(make_headers())
-        results_layout.addWidget(make_separator())
-        # ei*
-        ei_param = ModernParameterWidget(
-            "Initial thawed void ratio",
-            self.result_EI_type, self.result_EI_unit, self.result_EI_input,
-            "Initial thawed void ratio (ei*)"
-        )
-        # Cc*
-        cc_param = ModernParameterWidget(
-            "Thawed soil compression index",
-            self.result_Cc_type, self.result_Cc_unit, self.result_Cc_input,
-            "Thawed soil compression index (Cc*)"
-        )
-        # Ck*
-        ck_param = ModernParameterWidget(
-            "Hydraulic conductivity index",
-            self.result_Ck_type, self.result_Ck_unit, self.result_Ck_input,
-            "Hydraulic conductivity index (Ck*)"
-        )
-        results_layout.addWidget(ei_param)
-        results_layout.addWidget(cc_param)
-        results_layout.addWidget(ck_param)
-        results_group.setLayout(results_layout)
-        results_group.setVisible(False)  # Masqué par défaut
-
-        # Ajout des groupes au layout
-        parameters_layout.addWidget(soil_group)
-        parameters_layout.addWidget(pore_group)
-        parameters_layout.addWidget(compress_group)
-        parameters_layout.addWidget(gs_group)
-        parameters_layout.addWidget(custom_checkbox_widget)
-        parameters_layout.addWidget(results_group)
-
-        # Boutons
-        button_layout = QHBoxLayout()
-        button_layout.setSpacing(10)
-        button_layout.addStretch()
-        button_layout.addWidget(self.reset_button)
-        button_layout.addWidget(self.calculate_button)
-        button_layout.addStretch()
-        parameters_layout.addLayout(button_layout)
-
-        # --- Résultats à droite ---
-        results_panel = QWidget()
-        results_panel.setObjectName("resultsPanel")
-        results_layout_right = QVBoxLayout(results_panel)
-        results_layout_right.setContentsMargins(10, 10, 10, 10)
-        results_layout_right.setSpacing(10)
-
-        results_title = QLabel("Hydraulic Results")
-        results_title.setObjectName("resultsTitle")
-        results_layout_right.addWidget(results_title)
-        results_layout_right.addWidget(self.result_label)
-
-        graph_title = QLabel("Hydraulic Conductivity Graph")
-        graph_title.setObjectName("graphTitle")
-        results_layout_right.addWidget(graph_title)
-        results_layout_right.addWidget(self.graph_viewer)
-
-        # --- Layout principal ---
-        main_layout.addWidget(parameters_widget, 1)
-        main_layout.addWidget(results_panel, 1)
-        self.setLayout(main_layout)
-
-        # Stocke pour accès dans d'autres méthodes
-        self.results_group = results_group
-
     def _create_line_edit(self, placeholder):
         edit = QLineEdit()
         edit.setPlaceholderText(placeholder)
@@ -327,8 +158,10 @@ class HydroPage(QWidget):
 
     def _connect_unit_updates(self):
         self.type_sol.currentIndexChanged.connect(lambda: self.update_unit_options(self.type_sol, self.type_sol_unit))
-        self.pores_sol.currentIndexChanged.connect(lambda: self.update_unit_options(self.pores_sol, self.pores_sol_unit))
-        self.compress_sol.currentIndexChanged.connect(lambda: self.update_unit_options(self.compress_sol, self.compress_sol_unit))
+        self.pores_sol.currentIndexChanged.connect(
+            lambda: self.update_unit_options(self.pores_sol, self.pores_sol_unit))
+        self.compress_sol.currentIndexChanged.connect(
+            lambda: self.update_unit_options(self.compress_sol, self.compress_sol_unit))
 
     def _set_initial_units(self):
         self.update_unit_options(self.type_sol, self.type_sol_unit)
@@ -381,7 +214,8 @@ class HydroPage(QWidget):
         for value, unit_combo, label in validations:
             valid, min_val, max_val = self.validate_input(value, unit_combo)
             if not valid:
-                QMessageBox.warning(self, "Invalid value", f"The value for {label} must be between {min_val} and {max_val}.")
+                QMessageBox.warning(self, "Invalid value",
+                                    f"The value for {label} must be between {min_val} and {max_val}.")
                 return
 
         if self.pores_sol_unit.currentText() == "g/cm3":
@@ -393,9 +227,9 @@ class HydroPage(QWidget):
 
         formula_class = {"clay%": FormulaClay, "wL": FormulaLiquid, "d50ff": FormulaD50ff}.get(data["type"])
 
-        # Pour les valeurs custom
+        # For custom values
         if self.use_custom_params_check.isChecked():
-            # Calcul automatique pour initialisation
+            # Automatic calculation for initialization
             try:
                 result, ei_calc, cc_calc, ck_calc, e0, sigma_0, kv0, sigma_v = formula_class().calculate(
                     data["type_sol"], data["pores_sol"], data["compress_sol"], data["density_sol"],
@@ -434,7 +268,7 @@ class HydroPage(QWidget):
                 except ValueError:
                     QMessageBox.warning(self, "Invalid Ck*", "Please enter a valid number for Ck*.")
                     return
-            # Calcul final avec les valeurs custom ou éditées
+            # Final calculation with custom or edited values
             try:
                 result, ei, cc, ck, e0, sigma_0, kv0, sigma_v = formula_class().calculate(
                     data["type_sol"], data["pores_sol"], data["compress_sol"], data["density_sol"],
@@ -453,7 +287,6 @@ class HydroPage(QWidget):
                 QMessageBox.critical(self, "Error", f"Calculation error: {e}")
                 return
         else:
-           
             try:
                 result, ei, cc, ck, e0, sigma_0, kv0, sigma_v = formula_class().calculate(
                     data["type_sol"], data["pores_sol"], data["compress_sol"], data["density_sol"],
@@ -521,7 +354,7 @@ class HydroPage(QWidget):
         self.compress_input.setMaximumWidth(width)
         self.density_input.setMinimumWidth(width)
         self.density_input.setMaximumWidth(width)
-        # Pour les résultats optionnels
+        # For optional results
         if hasattr(self, 'result_EI_input'):
             self.result_EI_input.setMinimumWidth(width)
             self.result_EI_input.setMaximumWidth(width)
@@ -531,3 +364,61 @@ class HydroPage(QWidget):
         if hasattr(self, 'result_Ck_input'):
             self.result_Ck_input.setMinimumWidth(width)
             self.result_Ck_input.setMaximumWidth(width)
+
+    def _setup_custom_results(self):
+        # Create the custom results group
+        self.results_group = ModernGroupBox("Hydraulic Custom Parameters")
+        results_layout = QVBoxLayout()
+        results_layout.setSpacing(6)
+
+        # Headers
+        headers_layout = QGridLayout()
+        headers_layout.addWidget(QLabel("<b>Parameter</b>"), 0, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
+        headers_layout.addWidget(QLabel("<b>Type</b>"), 0, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
+        headers_layout.addWidget(QLabel("<b>Unit</b>"), 0, 2, alignment=Qt.AlignmentFlag.AlignHCenter)
+        headers_layout.addWidget(QLabel("<b>Value</b>"), 0, 3, alignment=Qt.AlignmentFlag.AlignHCenter)
+        headers_layout.setColumnStretch(0, 3)
+        headers_layout.setColumnStretch(1, 2)
+        headers_layout.setColumnStretch(2, 1)
+        headers_layout.setColumnStretch(3, 2)
+
+        # Separator
+        separator = QFrame()
+        separator.setFrameShape(QFrame.Shape.HLine)
+        separator.setStyleSheet("background-color: #e2e8f0; height: 1px;")
+
+        # Add the parameters
+        ei_param = ModernParameterWidget(
+            "Initial thawed void ratio",
+            self.result_EI_type, self.result_EI_unit, self.result_EI_input
+        )
+
+        cc_param = ModernParameterWidget(
+            "Thawed soil compression index",
+            self.result_Cc_type, self.result_Cc_unit, self.result_Cc_input
+        )
+
+        ck_param = ModernParameterWidget(
+            "Hydraulic conductivity index",
+            self.result_Ck_type, self.result_Ck_unit, self.result_Ck_input
+        )
+
+        # Assemble the layout
+        results_layout.addLayout(headers_layout)
+        results_layout.addWidget(separator)
+        results_layout.addWidget(ei_param)
+        results_layout.addWidget(cc_param)
+        results_layout.addWidget(ck_param)
+        
+        self.results_group.setLayout(results_layout)
+        self.results_group.setVisible(False)
+
+        # Add to main layout
+        main_layout = self.layout()
+        if main_layout:
+            left_widget = main_layout.itemAt(0).widget()
+            if left_widget:
+                left_layout = left_widget.layout()
+                if left_layout:
+                    # Insert before the button layout (which is the last item)
+                    left_layout.insertWidget(left_layout.count() - 1, self.results_group)
