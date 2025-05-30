@@ -229,83 +229,60 @@ class HydroPage(QWidget):
             "Fine fraction median diameter": FormulaD50ff
         }.get(data["type"])
 
+        # Get initial calculated values
+        try:
+            result, ei_calc, cc_calc, ck_calc, e0, sigma_0, kv0, sigma_v = formula_class().calculate(
+                data["type_sol"], data["pores_sol"], data["compress_sol"], data["density_sol"],
+                data["water"], ei=None, cc=None, ck=None
+            )
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Calculation error: {e}")
+            return
+
+        # Initialize with calculated values
+        ei = ei_calc
+        cc = cc_calc
+        ck = ck_calc
+
         # For custom values
         if self.use_custom_params_check.isChecked():
-            # Automatic calculation for initialization
-            try:
-                result, ei_calc, cc_calc, ck_calc, e0, sigma_0, kv0, sigma_v = formula_class().calculate(
-                    data["type_sol"], data["pores_sol"], data["compress_sol"], data["density_sol"],
-                    data["water"], ei=None, cc=None, ck=None
-                )
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Calculation error: {e}")
-                return
-            # EI*
-            if not self._custom_ei_edited:
-                self.result_EI_input.setText(f"{ei_calc:.2f}")
-                ei = ei_calc
-            else:
-                try:
-                    ei = float(self.result_EI_input.text())
-                except ValueError:
-                    QMessageBox.warning(self, "Invalid ei*", "Please enter a valid number for ei*.")
-                    return
-            # Cc*
-            if not self._custom_cc_edited:
-                self.result_Cc_input.setText(f"{cc_calc:.2f}")
-                cc = cc_calc
-            else:
-                try:
-                    cc = float(self.result_Cc_input.text())
-                except ValueError:
-                    QMessageBox.warning(self, "Invalid Cc*", "Please enter a valid number for Cc*.")
-                    return
-            # Ck*
-            if not self._custom_ck_edited:
-                self.result_Ck_input.setText(f"{ck_calc:.2f}")
-                ck = ck_calc
-            else:
-                try:
-                    ck = float(self.result_Ck_input.text())
-                except ValueError:
-                    QMessageBox.warning(self, "Invalid Ck*", "Please enter a valid number for Ck*.")
-                    return
-            # Final calculation with custom or edited values
-            try:
-                result, ei, cc, ck, e0, sigma_0, kv0, sigma_v = formula_class().calculate(
-                    data["type_sol"], data["pores_sol"], data["compress_sol"], data["density_sol"],
-                    data["water"], ei=ei, cc=cc, ck=ck
-                )
-                self.result_label.setText(f"Result: {result:.2e}")
-                self.result_EI_input.setText(f"{ei:.2f}")
-                self.result_Cc_input.setText(f"{cc:.2f}")
-                self.result_Ck_input.setText(f"{ck:.2f}")
-                self.graph_data = {
-                    "result": result, "ei": ei, "cc": cc, "ck": ck,
-                    "e0": e0, "sigma_0": sigma_0, "kv0": kv0, "sigma_v": sigma_v
-                }
-                self.graph_viewer.set_graph_data(self.graph_data)
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Calculation error: {e}")
-                return
-        else:
-            try:
-                result, ei, cc, ck, e0, sigma_0, kv0, sigma_v = formula_class().calculate(
-                    data["type_sol"], data["pores_sol"], data["compress_sol"], data["density_sol"],
-                    data["water"], ei=None, cc=None, ck=None
-                )
-                self.result_label.setText(f"Result: {result:.2e}")
-                self.result_EI_input.setText(f"{ei:.2f}")
-                self.result_Cc_input.setText(f"{cc:.2f}")
-                self.result_Ck_input.setText(f"{ck:.2f}")
-                self.graph_data = {
-                    "result": result, "ei": ei, "cc": cc, "ck": ck,
-                    "e0": e0, "sigma_0": sigma_0, "kv0": kv0, "sigma_v": sigma_v
-                }
-                self.graph_viewer.set_graph_data(self.graph_data)
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Calculation error: {e}")
-                return
+            # Check each parameter's checkbox and update if checked
+            for widget in self.results_group.findChildren(QCheckBox):
+                if widget.isChecked():
+                    try:
+                        if "Initial thawed void ratio" in widget.text():
+                            ei = float(self.result_EI_input.text())
+                        elif "Thawed soil compression index" in widget.text():
+                            cc = float(self.result_Cc_input.text())
+                        elif "Hydraulic conductivity index" in widget.text():
+                            ck = float(self.result_Ck_input.text())
+                    except ValueError:
+                        QMessageBox.warning(self, "Invalid Value", f"Please enter a valid number for {widget.text()}")
+                        return
+
+        # Always update display
+        self.result_EI_input.setText(f"{ei:.2f}")
+        self.result_Cc_input.setText(f"{cc:.2f}")
+        self.result_Ck_input.setText(f"{ck:.2f}")
+
+        # Final calculation with custom or calculated values
+        try:
+            result, ei, cc, ck, e0, sigma_0, kv0, sigma_v = formula_class().calculate(
+                data["type_sol"], data["pores_sol"], data["compress_sol"], data["density_sol"],
+                data["water"], ei=ei, cc=cc, ck=ck
+            )
+            self.result_label.setText(f"Result: {result:.2e}")
+            self.result_EI_input.setText(f"{ei:.2f}")
+            self.result_Cc_input.setText(f"{cc:.2f}")
+            self.result_Ck_input.setText(f"{ck:.2f}")
+            self.graph_data = {
+                "result": result, "ei": ei, "cc": cc, "ck": ck,
+                "e0": e0, "sigma_0": sigma_0, "kv0": kv0, "sigma_v": sigma_v
+            }
+            self.graph_viewer.set_graph_data(self.graph_data)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Calculation error: {e}")
+            return
 
     def reset(self):
         for input_widget in [
