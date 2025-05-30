@@ -30,7 +30,10 @@ class GraphViewer(QWidget):
         layout.addLayout(self.show_row)
         layout.addWidget(self.canvas)
 
-        self.coord_label = QLabel("Coordinates:")
+        # Create coordinate label with preloaded line and monospace font
+        self.coord_label = QLabel("Coordinates: x = --            y = --")
+        self.coord_label.setFixedHeight(25)  # Fixed height for single line
+        self.coord_label.setStyleSheet("font-family: monospace;")  # Use monospace font for consistent spacing
         layout.addWidget(self.coord_label)
 
         self.setLayout(layout)
@@ -112,7 +115,7 @@ class GraphViewer(QWidget):
 
     def mouse_move(self, event):
         if event.inaxes is None or event.xdata is None:
-            self.coord_label.setText("Coordinates:")
+            self.coord_label.setText("Coordinates: x = --            y = --")
             for dot in self.follow_dots:
                 dot.set_visible(False)
             self.canvas.draw_idle()
@@ -162,10 +165,13 @@ class GraphViewer(QWidget):
 
             dot.set_data([x], [y])
             dot.set_visible(True)
-            coord_text += f"\nGraph {i + 1}: x = {x:.4g}, y = {y:.4f}"
+            # Format x with fixed width of 12 characters (including scientific notation)
+            x_str = f"{x:.4g}".ljust(12)
+            coord_text = f"Coordinates: x = {x_str}  y = {y:.4f}"
             updated = True
+            break  # Only show coordinates for the graph being hovered
 
-        self.coord_label.setText(coord_text if updated else "Coordinates:")
+        self.coord_label.setText(coord_text if updated else "Coordinates: x = --            y = --")
         self.canvas.draw_idle()
 
     def clear_graph(self):
@@ -175,4 +181,4 @@ class GraphViewer(QWidget):
         self.lines.clear()
         self.axes.clear()
         self.follow_dots.clear()
-        self.coord_label.setText("Coordinates:")
+        self.coord_label.setText("Coordinates: x = --            y = --")

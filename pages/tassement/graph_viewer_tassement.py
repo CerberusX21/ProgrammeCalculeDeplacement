@@ -28,7 +28,10 @@ class GraphViewer(QWidget):
         layout.addLayout(self.show_row)
         layout.addWidget(self.canvas)
 
-        self.coord_label = QLabel("Coordinates:")
+        # Create coordinate label with preloaded line and monospace font
+        self.coord_label = QLabel("Coordinates: x = --            y = --")
+        self.coord_label.setFixedHeight(25)  # Fixed height for single line
+        self.coord_label.setStyleSheet("font-family: monospace;")  # Use monospace font for consistent spacing
         layout.addWidget(self.coord_label)
 
         self.setLayout(layout)
@@ -156,13 +159,12 @@ class GraphViewer(QWidget):
 
     def mouse_move(self, event):
         if event.inaxes is None or event.xdata is None:
-            self.coord_label.setText("Coordinates:")
+            self.coord_label.setText("Coordinates: x = --            y = --")
             for dot in self.follow_dots:
                 dot.set_visible(False)
             self.canvas.draw_idle()
             return
 
-        coord_text = "Coordinates:"
         updated = False
 
         for i, (line, ax, dot) in enumerate(zip(self.lines, self.axes, self.follow_dots)):
@@ -184,17 +186,20 @@ class GraphViewer(QWidget):
 
             dot.set_data([x], [y])
             dot.set_visible(True)
-            coord_text += f"\nGraph {i + 1}: x = {x:.4g}, y = {y:.4f}"
+            # Format x with fixed width of 12 characters (including scientific notation)
+            x_str = f"{x:.4g}".ljust(12)
+            self.coord_label.setText(f"Coordinates: x = {x_str}  y = {y:.4f}")
             updated = True
 
-        self.coord_label.setText(coord_text if updated else "Coordinates:")
+        if not updated:
+            self.coord_label.setText("Coordinates: x = --            y = --")
         self.canvas.draw_idle()
 
     def clear_graph(self):
         self.graph_data = None
         self.figure.clear()
         self.canvas.draw_idle()
-        self.coord_label.setText("Coordinates:")
+        self.coord_label.setText("Coordinates: x = --            y = --")
         self.follow_dots = []
         self.lines = []
         self.axes = []
