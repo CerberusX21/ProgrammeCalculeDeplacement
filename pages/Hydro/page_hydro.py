@@ -34,9 +34,11 @@ class HydroPage(QWidget):
         
         # Create the results display widget
         self.results_display = ModernResultsDisplay()
+        self.results_display.setFixedHeight(150)  # Match settlement page height
         
         # Create the graph viewer
         self.graph_viewer = GraphViewer()
+        self.graph_viewer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         
         self.calculate_button = QPushButton("Calculate")
         self.reset_button = QPushButton("Reset")
