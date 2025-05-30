@@ -175,3 +175,30 @@ class ModernResultsSection(QWidget):
         enabled = state == Qt.CheckState.Checked.value
         for widget in widgets:
             widget.setEnabled(enabled)
+
+    def add_result_no_value(self, label, unit_widget):
+        """Add a result row with only a unit selection (no value input)"""
+        # Create grid layout
+        grid = QGridLayout()
+        grid.setSpacing(3)
+        grid.setContentsMargins(2, 0, 2, 0)
+        
+        # Create checkbox
+        checkbox = QCheckBox(label)
+        
+        # Apply styles
+        unit_widget.setStyleSheet(self.DISABLED_STYLE)
+        
+        # Set initial state - disabled
+        unit_widget.setEnabled(False)
+        
+        # Add widgets to grid
+        grid.addWidget(checkbox, 0, 0)
+        grid.addWidget(unit_widget, 0, 1)
+        
+        # Set column stretches
+        grid.setColumnStretch(0, 4)  # Checkbox
+        grid.setColumnStretch(1, 2)  # Unit
+        
+        self.parameters_layout.addLayout(grid)
+        return checkbox

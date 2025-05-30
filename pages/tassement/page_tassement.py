@@ -94,21 +94,26 @@ class TassementPage(QWidget):
         self.density_sol_unit = QComboBox()
         self.density_sol_unit.addItems(["-"])
 
+        # Update initial states of dropdowns with single options
+        self._update_combo_state(self.compress_sol)
+        self._update_combo_state(self.density_sol)
+        self._update_combo_state(self.density_sol_unit)
+
         # Results widgets
         self.result_EI_input = self._create_line_edit("Value...")
         self.result_Cc_input = self._create_line_edit("Value...")
-        self.result_type_sol_choice = self._create_line_edit("Value...")
 
         # Results unit dropdowns
         self.result_EI_unit = QComboBox()
         self.result_EI_unit.addItems(["ei*"])
+        self._update_combo_state(self.result_EI_unit)
 
         self.result_Cc_unit = QComboBox()
         self.result_Cc_unit.addItems(["Cc*"])
+        self._update_combo_state(self.result_Cc_unit)
 
         self.result_type_sol_unit = QComboBox()
         self.result_type_sol_unit.addItems(["Ice-Rich", "Ice-Poor"])
-        self.result_type_sol_unit.setCurrentIndex(0)
 
         # Connect combo box changes
         self.type_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('type_sol', idx))
@@ -127,23 +132,34 @@ class TassementPage(QWidget):
         # Create the results section
         results_section = ModernResultsSection()
         
-        # Add the parameters
-        results_section.add_result(
+        # Add the parameters and store the checkboxes
+        self.result_EI_check = results_section.add_result(
             "Initial thawed void ratio",
             self.result_EI_unit,
             self.result_EI_input
         )
         
-        results_section.add_result(
+        self.result_Cc_check = results_section.add_result(
             "Thawed soil compression index",
             self.result_Cc_unit,
             self.result_Cc_input
         )
         
-        results_section.add_result(
+        # Add Ice content classification without value input
+        self.result_type_sol_check = results_section.add_result_no_value(
             "Ice content classification",
-            self.result_type_sol_unit,
-            self.result_type_sol_choice
+            self.result_type_sol_unit
+        )
+        
+        # Connect checkbox state changes to input field states
+        self.result_EI_check.stateChanged.connect(
+            lambda state: self._toggle_input_fields(state, [self.result_EI_input, self.result_EI_unit])
+        )
+        self.result_Cc_check.stateChanged.connect(
+            lambda state: self._toggle_input_fields(state, [self.result_Cc_input, self.result_Cc_unit])
+        )
+        self.result_type_sol_check.stateChanged.connect(
+            lambda state: self._toggle_input_fields(state, [self.result_type_sol_unit])
         )
         
         # Set up the main layout
@@ -176,21 +192,36 @@ class TassementPage(QWidget):
                     # Fallback: insert before the button layout if checkbox not found
                     left_layout.insertWidget(left_layout.count() - 1, self.results_group)
 
+    def _toggle_input_fields(self, state, widgets):
+        """Enable or disable input fields based on checkbox state"""
+        enabled = state == Qt.CheckState.Checked.value
+        for widget in widgets:
+            widget.setEnabled(enabled)
+            if isinstance(widget, (QLineEdit, QComboBox)):
+                if enabled:
+                    widget.setStyleSheet("")
+                else:
+                    widget.setStyleSheet("""
+                        QLineEdit:disabled, QComboBox:disabled {
+                            background-color: #f0f0f0;
+                            color: #666666;
+                            border: 1px solid #cccccc;
+                        }
+                    """)
+
     def _toggle_custom_params(self, state):
         is_checked = state == Qt.CheckState.Checked.value
-        if hasattr(self, 'results_group'):
-            self.results_group.setVisible(is_checked)
+        self.results_group.setVisible(is_checked)
         
-        # Enable/disable the input fields
-        self.result_EI_input.setEnabled(is_checked)
-        self.result_Cc_input.setEnabled(is_checked)
-        self.result_type_sol_choice.setEnabled(is_checked)
-        
-        # Reset custom edit flags if unchecked
-        if not is_checked:
-            self._custom_ei_edited = False
-            self._custom_cc_edited = False
-            self._custom_type_edited = False
+        # When showing the custom results, ensure everything starts disabled
+        if is_checked:
+            # Reset and disable all checkboxes
+            self.result_EI_check.setChecked(False)
+            self.result_Cc_check.setChecked(False)
+            self.result_type_sol_check.setChecked(False)
+            
+            # The checkbox state changes will automatically handle disabling and styling the inputs
+            # through the connected _toggle_input_fields method
 
     def _create_line_edit(self, placeholder):
         edit = QLineEdit()
@@ -202,7 +233,7 @@ class TassementPage(QWidget):
                       self.pores_sol, self.pores_sol_unit,
                       self.compress_sol, self.compress_sol_unit,
                       self.density_sol, self.density_sol_unit,
-                      self.result_type_sol_choice]:
+                      self.result_type_sol_unit]:
             combo.setMinimumWidth(100)
             combo.setMaximumWidth(120)
             combo.setMinimumHeight(20)
@@ -233,6 +264,9 @@ class TassementPage(QWidget):
             if current_unit in units:
                 unit_combo.setCurrentIndex(units.index(current_unit))
             unit_combo.blockSignals(False)
+            
+            # Update the combo box state based on number of options
+            self._update_combo_state(unit_combo)
 
     def validate_input(self, value: float, unit_combo):
         if unit_combo is False:
@@ -308,10 +342,10 @@ class TassementPage(QWidget):
                         return
                 # Type de sol
                 if not self._custom_type_edited:
-                    self.result_type_sol_choice.setText("Ice-Rich" if code_etat == 0 else "Ice-Poor")
+                    self.result_type_sol_unit.setCurrentIndex(0 if code_etat == 0 else 1)
                     code_etat_custom = code_etat
                 else:
-                    code_etat_custom = 0 if self.result_type_sol_choice.text() == "Ice-Rich" else 1
+                    code_etat_custom = 0 if self.result_type_sol_unit.currentIndex() == 0 else 1
                 # Cc*
                 if not self._custom_cc_edited:
                     cc_star = CalculCcStar(ei_star, data["type_sol_valeur"], data["type_sol"],
@@ -329,7 +363,7 @@ class TassementPage(QWidget):
                 self.result_EI_input.setText(f"{ei_star:.3f}")
                 cc_star = CalculCcStar(ei_star, data["type_sol_valeur"], data["type_sol"], code_etat).calculer()
                 self.result_Cc_input.setText(f"{cc_star:.3f}")
-                self.result_type_sol_choice.setText("Ice-Rich" if code_etat == 0 else "Ice-Poor")
+                self.result_type_sol_unit.setCurrentIndex(0 if code_etat == 0 else 1)
 
             # 4. Calculs restants
             e0_star = CalculE0Tassement(ei_star, cc_star, code_etat).calculer()
@@ -365,14 +399,13 @@ class TassementPage(QWidget):
             self.type_sol, self.type_sol_unit,
             self.pores_sol, self.pores_sol_unit,
             self.compress_sol, self.compress_sol_unit,
-            self.result_type_sol_choice
+            self.result_type_sol_unit
         ]:
             combo_box.setCurrentIndex(0)
         self.use_custom_params_check.setChecked(False)
         self.result_EI_input.setEnabled(False)
         self.result_Cc_input.setEnabled(False)
-        self.result_type_sol_choice.setEnabled(False)
-        self.result_type_sol_choice.setCurrentIndex(-1)
+        self.result_type_sol_unit.setCurrentIndex(-1)
         self.result_label.setText("Result:")
         self.graph_viewer.clear_graph()
 
@@ -462,3 +495,25 @@ class TassementPage(QWidget):
             self._custom_ei_edited = False
             self._custom_cc_edited = False
             self._custom_type_edited = False
+
+    def _update_combo_state(self, combo: QComboBox):
+        """Update the enabled state and style of a combo box based on number of items"""
+        has_multiple_options = combo.count() > 1
+        combo.setEnabled(has_multiple_options)
+        
+        if not has_multiple_options:
+            combo.setStyleSheet("""
+                QComboBox {
+                    background-color: #f0f0f0;
+                    color: #666666;
+                    border: 1px solid #cccccc;
+                }
+                QComboBox::drop-down {
+                    border: none;
+                }
+                QComboBox::down-arrow {
+                    image: none;
+                }
+            """)
+        else:
+            combo.setStyleSheet("")

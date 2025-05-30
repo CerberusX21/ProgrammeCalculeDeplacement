@@ -116,6 +116,11 @@ class HydroPage(QWidget):
         self.density_sol_unit = QComboBox()
         self.density_sol_unit.addItems(["-"])
 
+        # Update initial states of dropdowns with single options
+        self._update_combo_state(self.compress_sol)
+        self._update_combo_state(self.density_sol)
+        self._update_combo_state(self.density_sol_unit)
+
         # Results widgets
         self.result_EI_input = self._create_line_edit("Value...")
         self.result_Cc_input = self._create_line_edit("Value...")
@@ -124,12 +129,15 @@ class HydroPage(QWidget):
         # Results unit dropdowns
         self.result_EI_unit = QComboBox()
         self.result_EI_unit.addItems(["ei*"])
+        self._update_combo_state(self.result_EI_unit)
 
         self.result_Cc_unit = QComboBox()
         self.result_Cc_unit.addItems(["Cc*"])
+        self._update_combo_state(self.result_Cc_unit)
 
         self.result_Ck_unit = QComboBox()
         self.result_Ck_unit.addItems(["Ck*"])
+        self._update_combo_state(self.result_Ck_unit)
 
         # Connect combo box changes
         self.type_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('type_sol', idx))
@@ -166,6 +174,28 @@ class HydroPage(QWidget):
         self.update_unit_options(self.pores_sol, self.pores_sol_unit)
         self.update_unit_options(self.compress_sol, self.compress_sol_unit)
 
+    def _update_combo_state(self, combo: QComboBox):
+        """Update the enabled state and style of a combo box based on number of items"""
+        has_multiple_options = combo.count() > 1
+        combo.setEnabled(has_multiple_options)
+        
+        if not has_multiple_options:
+            combo.setStyleSheet("""
+                QComboBox {
+                    background-color: #f0f0f0;
+                    color: #666666;
+                    border: 1px solid #cccccc;
+                }
+                QComboBox::drop-down {
+                    border: none;
+                }
+                QComboBox::down-arrow {
+                    image: none;
+                }
+            """)
+        else:
+            combo.setStyleSheet("")
+
     def update_unit_options(self, type_combo: QComboBox, unit_combo: QComboBox):
         selected_type = type_combo.currentText()
         units = self.type_unit_mapping.get(type_combo, {}).get(selected_type, [])
@@ -177,6 +207,9 @@ class HydroPage(QWidget):
             if current_unit in units:
                 unit_combo.setCurrentIndex(units.index(current_unit))
             unit_combo.blockSignals(False)
+            
+            # Update the combo box state based on number of options
+            self._update_combo_state(unit_combo)
 
     def validate_input(self, value: float, unit_combo):
         if unit_combo is False:
