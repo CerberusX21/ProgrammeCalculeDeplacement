@@ -122,6 +122,9 @@ def assemble_hydro_layout(self):
     parameters_layout.setSpacing(4)
     parameters_layout.setContentsMargins(2, 4, 2, 4)
 
+    # Set fixed width for parameters panel
+    parameters_widget.setFixedWidth(450)  # Fixed width that accommodates all content
+
     # Parameters Group (without title)
     soil_group = ModernGroupBox("")
     soil_layout = QVBoxLayout()
@@ -134,9 +137,10 @@ def assemble_hydro_layout(self):
         section.setSpacing(4)
         section.setContentsMargins(2, 0, 2, 0)
         
-        # Add main parameter label
+        # Add main parameter label with transparent background
         label_widget = QLabel(label)
         label_widget.setProperty("class", "parameter-label")
+        label_widget.setStyleSheet("background: transparent;")
         section.addWidget(label_widget)
         
         # Create grid layout for the widgets
@@ -144,7 +148,7 @@ def assemble_hydro_layout(self):
         grid.setSpacing(4)
         grid.setContentsMargins(0, 0, 0, 0)
         
-        # Add headers
+        # Add headers with transparent background
         type_header = QLabel("Type")
         value_header = QLabel("Value")
         unit_header = QLabel("Unit")
@@ -152,6 +156,7 @@ def assemble_hydro_layout(self):
         for header in [type_header, value_header, unit_header]:
             header.setProperty("class", "column-header")
             header.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            header.setStyleSheet("background: transparent;")
         
         # Add headers to grid
         grid.addWidget(type_header, 0, 0)
@@ -208,10 +213,6 @@ def assemble_hydro_layout(self):
     button_layout.addStretch()
     parameters_layout.addLayout(button_layout)
 
-    # Make parameters panel responsive with minimum width
-    parameters_widget.setMinimumWidth(400)
-    parameters_widget.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
-
     # --- Results Panel (Right) ---
     results_panel = QWidget()
     results_panel.setObjectName("resultsPanel")
@@ -244,78 +245,80 @@ def _setup_custom_results(self):
     results_layout.setSpacing(12)  # Match soil parameters spacing
     results_layout.setContentsMargins(4, 8, 4, 8)  # Match soil parameters margins
 
-    # Helper function to create parameter section with label above widgets
-    def add_custom_parameter_section(layout, label, widget_type, widget_unit, widget_value):
-        section = QVBoxLayout()
-        section.setSpacing(4)
-        section.setContentsMargins(2, 0, 2, 0)
-        
-        # Add main parameter label
-        label_widget = QLabel(label)
-        label_widget.setProperty("class", "parameter-label")
-        section.addWidget(label_widget)
-        
-        # Create grid layout for the widgets
-        grid = QGridLayout()
-        grid.setSpacing(4)
-        grid.setContentsMargins(0, 0, 0, 0)
-        
-        # Add headers
-        type_header = QLabel("Type")
-        value_header = QLabel("Value")
-        unit_header = QLabel("Unit")
-        
-        for header in [type_header, value_header, unit_header]:
-            header.setProperty("class", "column-header")
-            header.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        
-        # Add headers to grid
-        grid.addWidget(type_header, 0, 0)
-        grid.addWidget(value_header, 0, 1)
-        grid.addWidget(unit_header, 0, 2)
-        
-        # Add widgets to grid
-        grid.addWidget(widget_type, 1, 0)
-        grid.addWidget(widget_value, 1, 1)
-        grid.addWidget(widget_unit, 1, 2)
-        
-        # Set column stretches for responsive layout
-        grid.setColumnStretch(0, 4)  # Type column gets more space
-        grid.setColumnStretch(1, 1)  # Value column
-        grid.setColumnStretch(2, 1)  # Unit column
-        
-        section.addLayout(grid)
-        layout.addLayout(section)
+    # Create grid layout for all parameters
+    grid = QGridLayout()
+    grid.setSpacing(4)
+    grid.setContentsMargins(0, 0, 0, 0)
+
+    # Add headers
+    type_header = QLabel("Type")
+    unit_header = QLabel("Unit")
+    value_header = QLabel("Value")
+    
+    for header in [type_header, unit_header, value_header]:
+        header.setProperty("class", "column-header")
+        header.setAlignment(Qt.AlignmentFlag.AlignLeft)
+    
+    # Add headers to grid
+    grid.addWidget(type_header, 0, 0)
+    grid.addWidget(unit_header, 0, 1)
+    grid.addWidget(value_header, 0, 2)
+
+    # Add separator line
+    separator = QFrame()
+    separator.setFrameShape(QFrame.Shape.HLine)
+    separator.setStyleSheet("background-color: #e2e8f0; height: 1px;")
+    grid.addWidget(separator, 1, 0, 1, 3)  # span across all columns
+
+    row = 2  # Start after headers and separator
+
+    # Helper function to add a parameter row
+    def add_parameter_row(label, unit_widget, value_widget):
+        type_label = QLabel(label)
+        type_label.setProperty("class", "parameter-label")
+        grid.addWidget(type_label, row, 0)
+        grid.addWidget(unit_widget, row, 1)
+        grid.addWidget(value_widget, row, 2)
 
     # Add the parameters
     if hasattr(self, 'result_EI_input'):
-        add_custom_parameter_section(
-            results_layout,
+        add_parameter_row(
             "Initial thawed void ratio",
-            self.result_EI_type, self.result_EI_unit, self.result_EI_input
+            self.result_EI_unit,
+            self.result_EI_input
         )
+        row += 1
 
     if hasattr(self, 'result_Cc_input'):
-        add_custom_parameter_section(
-            results_layout,
+        add_parameter_row(
             "Thawed soil compression index",
-            self.result_Cc_type, self.result_Cc_unit, self.result_Cc_input
+            self.result_Cc_unit,
+            self.result_Cc_input
         )
+        row += 1
 
     if hasattr(self, 'result_Ck_input'):
-        add_custom_parameter_section(
-            results_layout,
+        add_parameter_row(
             "Hydraulic conductivity index",
-            self.result_Ck_type, self.result_Ck_unit, self.result_Ck_input
+            self.result_Ck_unit,
+            self.result_Ck_input
         )
+        row += 1
 
     if hasattr(self, 'result_type_sol_choice'):
-        add_custom_parameter_section(
-            results_layout,
+        add_parameter_row(
             "Ice content classification",
-            self.result_type_sol_type, self.result_type_sol_unit, self.result_type_sol_choice
+            self.result_type_sol_unit,
+            self.result_type_sol_choice
         )
-    
+        row += 1
+
+    # Set column stretches for responsive layout
+    grid.setColumnStretch(0, 4)  # Type column gets more space
+    grid.setColumnStretch(1, 1)  # Unit column
+    grid.setColumnStretch(2, 1)  # Value column
+
+    results_layout.addLayout(grid)
     self.results_group.setLayout(results_layout)
     self.results_group.setVisible(False)
 

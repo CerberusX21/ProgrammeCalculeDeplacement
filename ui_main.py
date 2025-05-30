@@ -8,8 +8,8 @@ class Window(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Soil Analysis Tool")
-        self.setMinimumSize(800, 600)  # Minimum size for usability
-        self.resize(1300, 700)  # Default/preferred size
+        self.setMinimumSize(800, 700)  # Increased minimum height
+        self.resize(1300, 800)  # Increased default height
         self.setStyleSheet(APP_STYLE)
 
         self.tabs = QTabWidget()

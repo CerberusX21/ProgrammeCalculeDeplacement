@@ -1,11 +1,11 @@
 from PyQt6.QtWidgets import (
     QWidget, QLineEdit, QComboBox, QLabel,
-    QVBoxLayout, QPushButton, QMessageBox, QFrame, QGridLayout, QSizePolicy
+    QVBoxLayout, QPushButton, QMessageBox, QFrame, QGridLayout, QSizePolicy, QHBoxLayout, QCheckBox
 )
 from PyQt6.QtCore import Qt
 from pages.tassement.graph_viewer_tassement import GraphViewer
 from style import APP_STYLE
-from widgets.modern_widgets import ModernParameterWidget, ModernGroupBox
+from widgets.modern_widgets import ModernParameterWidget, ModernGroupBox, ModernResultsSection
 
 from formulas.tassement.formule_ei_tassement import EI_Tassement
 from formulas.tassement.formule_ip_ir_tassement import ClassificationSol
@@ -72,7 +72,6 @@ class TassementPage(QWidget):
         self.compress_input = self._create_line_edit("Value...")
         self.density_input = self._create_line_edit("Value...")
         self.density_input.setText("2.67")
-        self._set_value_column_width(120)
 
         self.type_sol = QComboBox()
         self.type_sol.setProperty("type", "type")
@@ -97,32 +96,19 @@ class TassementPage(QWidget):
 
         # Results widgets
         self.result_EI_input = self._create_line_edit("Value...")
-        self.result_EI_input.setProperty("custom", "true")
         self.result_Cc_input = self._create_line_edit("Value...")
-        self.result_Cc_input.setProperty("custom", "true")
+        self.result_type_sol_choice = self._create_line_edit("Value...")
 
-        self.result_EI_type = QComboBox()
-        self.result_EI_type.setProperty("type", "type")
-        self.result_EI_type.addItems(["ei*"])
+        # Results unit dropdowns
         self.result_EI_unit = QComboBox()
-        self.result_EI_unit.addItems(["-"])
+        self.result_EI_unit.addItems(["ei*"])
 
-        self.result_Cc_type = QComboBox()
-        self.result_Cc_type.setProperty("type", "type")
-        self.result_Cc_type.addItems(["Cc*"])
         self.result_Cc_unit = QComboBox()
-        self.result_Cc_unit.addItems(["-"])
+        self.result_Cc_unit.addItems(["Cc*"])
 
-        self.result_type_sol_choice = QComboBox()
-        self.result_type_sol_choice.setProperty("type", "type")
-        self.result_type_sol_choice.addItems(["Ice-Rich", "Ice-Poor"])
-        self.result_type_sol_choice.setCurrentIndex(0)
-
-        self.result_type_sol_type = QComboBox()
-        self.result_type_sol_type.setProperty("type", "type")
-        self.result_type_sol_type.addItems(["Ice content"])
         self.result_type_sol_unit = QComboBox()
-        self.result_type_sol_unit.addItems(["-"])
+        self.result_type_sol_unit.addItems(["Ice-Rich", "Ice-Poor"])
+        self.result_type_sol_unit.setCurrentIndex(0)
 
         # Connect combo box changes
         self.type_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('type_sol', idx))
@@ -137,59 +123,57 @@ class TassementPage(QWidget):
     def _setup_custom_results(self):
         # Create the custom results group
         self.results_group = ModernGroupBox("Settlement Custom Parameters")
-        results_layout = QVBoxLayout()
-        results_layout.setSpacing(6)
-
-        # Headers
-        headers_layout = QGridLayout()
-        headers_layout.addWidget(QLabel("<b>Parameter</b>"), 0, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
-        headers_layout.addWidget(QLabel("<b>Type</b>"), 0, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
-        headers_layout.addWidget(QLabel("<b>Unit</b>"), 0, 2, alignment=Qt.AlignmentFlag.AlignHCenter)
-        headers_layout.addWidget(QLabel("<b>Value</b>"), 0, 3, alignment=Qt.AlignmentFlag.AlignHCenter)
-        headers_layout.setColumnStretch(0, 3)
-        headers_layout.setColumnStretch(1, 2)
-        headers_layout.setColumnStretch(2, 1)
-        headers_layout.setColumnStretch(3, 2)
-
-        # Separator
-        separator = QFrame()
-        separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setStyleSheet("background-color: #e2e8f0; height: 1px;")
-
-        # Add the parameters
-        ei_param = ModernParameterWidget(
-            "Initial thawed void ratio",
-            self.result_EI_type, self.result_EI_unit, self.result_EI_input
-        )
-
-        cc_param = ModernParameterWidget(
-            "Thawed soil compression index",
-            self.result_Cc_type, self.result_Cc_unit, self.result_Cc_input
-        )
-
-        ice_param = ModernParameterWidget(
-            "Ice content classification",
-            self.result_type_sol_type, self.result_type_sol_unit, self.result_type_sol_choice
-        )
-
-        # Assemble the layout
-        results_layout.addLayout(headers_layout)
-        results_layout.addWidget(separator)
-        results_layout.addWidget(ei_param)
-        results_layout.addWidget(cc_param)
-        results_layout.addWidget(ice_param)
         
-        self.results_group.setLayout(results_layout)
+        # Create the results section
+        results_section = ModernResultsSection()
+        
+        # Add the parameters
+        results_section.add_result(
+            "Initial thawed void ratio",
+            self.result_EI_unit,
+            self.result_EI_input
+        )
+        
+        results_section.add_result(
+            "Thawed soil compression index",
+            self.result_Cc_unit,
+            self.result_Cc_input
+        )
+        
+        results_section.add_result(
+            "Ice content classification",
+            self.result_type_sol_unit,
+            self.result_type_sol_choice
+        )
+        
+        # Set up the main layout
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(results_section)
+        self.results_group.setLayout(main_layout)
         self.results_group.setVisible(False)
 
-        # Add to main layout
+        # Add to main layout right after the checkbox
         main_layout = self.layout()
         if main_layout:
             left_widget = main_layout.itemAt(0).widget()
             if left_widget:
                 left_layout = left_widget.layout()
                 if left_layout:
-                    # Insert before the button layout (which is the last item)
+                    # Find the checkbox widget
+                    for i in range(left_layout.count()):
+                        item = left_layout.itemAt(i)
+                        if item.widget() and isinstance(item.widget(), QWidget):
+                            if hasattr(item.widget(), 'layout'):
+                                checkbox_layout = item.widget().layout()
+                                if checkbox_layout and isinstance(checkbox_layout, QHBoxLayout):
+                                    for j in range(checkbox_layout.count()):
+                                        checkbox_item = checkbox_layout.itemAt(j)
+                                        if checkbox_item.widget() and isinstance(checkbox_item.widget(), QCheckBox):
+                                            # Insert the results group right after the checkbox's parent widget
+                                            left_layout.insertWidget(i + 1, self.results_group)
+                                            return
+                    
+                    # Fallback: insert before the button layout if checkbox not found
                     left_layout.insertWidget(left_layout.count() - 1, self.results_group)
 
     def _toggle_custom_params(self, state):
@@ -324,10 +308,10 @@ class TassementPage(QWidget):
                         return
                 # Type de sol
                 if not self._custom_type_edited:
-                    self.result_type_sol_choice.setCurrentIndex(0 if code_etat == 0 else 1)
+                    self.result_type_sol_choice.setText("Ice-Rich" if code_etat == 0 else "Ice-Poor")
                     code_etat_custom = code_etat
                 else:
-                    code_etat_custom = 0 if self.result_type_sol_choice.currentText() == "Ice-Rich" else 1
+                    code_etat_custom = 0 if self.result_type_sol_choice.text() == "Ice-Rich" else 1
                 # Cc*
                 if not self._custom_cc_edited:
                     cc_star = CalculCcStar(ei_star, data["type_sol_valeur"], data["type_sol"],
@@ -345,7 +329,7 @@ class TassementPage(QWidget):
                 self.result_EI_input.setText(f"{ei_star:.3f}")
                 cc_star = CalculCcStar(ei_star, data["type_sol_valeur"], data["type_sol"], code_etat).calculer()
                 self.result_Cc_input.setText(f"{cc_star:.3f}")
-                self.result_type_sol_choice.setCurrentIndex(0 if code_etat == 0 else 1)
+                self.result_type_sol_choice.setText("Ice-Rich" if code_etat == 0 else "Ice-Poor")
 
             # 4. Calculs restants
             e0_star = CalculE0Tassement(ei_star, cc_star, code_etat).calculer()
