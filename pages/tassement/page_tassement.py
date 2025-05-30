@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 from pages.tassement.graph_viewer_tassement import GraphViewer
 from style import APP_STYLE
-from widgets.modern_widgets import ModernParameterWidget, ModernGroupBox, ModernResultsSection
+from widgets.modern_widgets import ModernParameterWidget, ModernGroupBox, ModernResultsSection, ModernResultsDisplay
 
 from formulas.tassement.formule_ei_tassement import EI_Tassement
 from formulas.tassement.formule_ip_ir_tassement import ClassificationSol
@@ -38,11 +38,14 @@ class TassementPage(QWidget):
         self._connect_unit_updates()
         self._set_initial_units()
         
-        self.result_label = QLabel("Result:")
-        self.result_label.setObjectName("ResultLabel")
+        # Create the results display widget
+        self.results_display = ModernResultsDisplay()
+        
+        # Create the graph viewer
+        self.graph_viewer = GraphViewer()
+        
         self.calculate_button = QPushButton("Calculate")
         self.reset_button = QPushButton("Reset")
-        self.graph_viewer = GraphViewer()
         
         # Set up the main layout first
         assemble_hydro_layout(self)
@@ -51,7 +54,7 @@ class TassementPage(QWidget):
         self._setup_custom_results()
         
         # Connect signals
-        self.calculate_button.clicked.connect(lambda: self.calculate(self.result_label))
+        self.calculate_button.clicked.connect(lambda: self.calculate(self.results_display))
         self.reset_button.clicked.connect(self.reset)
         
         # For syncing data between pages
@@ -278,7 +281,7 @@ class TassementPage(QWidget):
             return (min_val <= value <= max_val), min_val, max_val
         return True, None, None
 
-    def calculate(self, result_label):
+    def calculate(self, results_display):
         try:
             data = {
                 'type_sol_valeur': float(self.type_sol_input.text()),
@@ -326,7 +329,12 @@ class TassementPage(QWidget):
                 QMessageBox.warning(self, "Warning",
                                     "The soil is close to the Ice-Rich/Ice-Poor limit. Classification may be sensitive to small changes in parameters.")
             detected_type = CLASSE_SOL[code_etat]
-            result_label.setText(f"Soil type : {detected_type}")
+            
+            # Clear previous results
+            self.results_display.clear()
+            
+            # Show soil type
+            self.results_display.add_result("", f"Soil type : {detected_type}")
 
             # 3. Gestion des paramètres custom
             if self.use_custom_params_check.isChecked():
@@ -372,12 +380,11 @@ class TassementPage(QWidget):
             ef = data["valeur_pore"] if data["type_pore"] == "Frozen void ratio" else ei_star * 1.09
             s1, s2, s_total = CalculTassements(ef, e0_star, indice_vides).calculer()
 
-            # 5. Affichage texte (toujours)
-            result_label.setText(
-                f"Result: Total settlement S = {s_total:.2f} %\n"
-                f"Settlement S1 (ice melt) = {s1:.2f} %\n"
-                f"Settlement S2 (compression) = {s2:.2f} %"
-            )
+            # 5. Display results exactly as before
+            self.results_display.clear()
+            self.results_display.add_result("", f"Total settlement S = {s_total:.2f} %")
+            self.results_display.add_result("", f"Settlement S1 (ice melt) = {s1:.2f} %")
+            self.results_display.add_result("", f"Settlement S2 (compression) = {s2:.2f} %")
 
             # 6. Mise à jour du graphique
             self.graph_viewer.set_is_tassement(True)
@@ -406,7 +413,7 @@ class TassementPage(QWidget):
         self.result_EI_input.setEnabled(False)
         self.result_Cc_input.setEnabled(False)
         self.result_type_sol_unit.setCurrentIndex(-1)
-        self.result_label.setText("Result:")
+        self.results_display.clear()
         self.graph_viewer.clear_graph()
 
     def register(self, s_total, ei_star, cc_star, e0_star, sigma0, indice_vides, s1, s2):

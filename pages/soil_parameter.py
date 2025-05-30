@@ -220,14 +220,7 @@ def assemble_hydro_layout(self):
     results_layout_right.setContentsMargins(2, 4, 2, 4)
     results_layout_right.setSpacing(4)
 
-    results_title = QLabel("Hydraulic Results")
-    results_title.setObjectName("resultsTitle")
-    results_layout_right.addWidget(results_title)
-    results_layout_right.addWidget(self.result_label)
-
-    graph_title = QLabel("Hydraulic Conductivity Graph")
-    graph_title.setObjectName("graphTitle")
-    results_layout_right.addWidget(graph_title)
+    results_layout_right.addWidget(self.results_display)
     results_layout_right.addWidget(self.graph_viewer)
 
     # Make results panel expand to fill available space

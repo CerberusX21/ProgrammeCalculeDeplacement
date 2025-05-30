@@ -9,7 +9,7 @@ from formulas.hydraulique.FormulaClay import FormulaClay
 from formulas.hydraulique.FormulaLiquid import FormulaLiquid
 from formulas.hydraulique.FormulaD50ff import FormulaD50ff
 from pages.soil_parameter import assemble_hydro_layout, init_unit_mappings, init_input_limits
-from widgets.modern_widgets import ModernParameterWidget, ModernGroupBox, ModernResultsSection
+from widgets.modern_widgets import ModernParameterWidget, ModernGroupBox, ModernResultsSection, ModernResultsDisplay
 
 
 class HydroPage(QWidget):
@@ -31,9 +31,13 @@ class HydroPage(QWidget):
         init_input_limits(self)
         self._connect_unit_updates()
         self._set_initial_units()
-        self.result_label = QLabel("Result:")
-        self.result_label.setObjectName("ResultLabel")
+        
+        # Create the results display widget
+        self.results_display = ModernResultsDisplay()
+        
+        # Create the graph viewer
         self.graph_viewer = GraphViewer()
+        
         self.calculate_button = QPushButton("Calculate")
         self.reset_button = QPushButton("Reset")
         self.calculate_button.clicked.connect(self.calculate)
@@ -235,13 +239,13 @@ class HydroPage(QWidget):
             QMessageBox.critical(self, "Value Error", "Please enter valid numerical values.")
             return
 
+        # Validation des entrées
         validations = [
             (data["type_sol"], self.type_sol_unit, self.type_sol.currentText()),
             (data["pores_sol"], self.pores_sol_unit, self.pores_sol.currentText()),
             (data["compress_sol"], self.compress_sol_unit, self.compress_sol.currentText()),
             (data["density_sol"], False, "Specific gravity of solids")
         ]
-
         for value, unit_combo, label in validations:
             valid, min_val, max_val = self.validate_input(value, unit_combo)
             if not valid:
@@ -297,8 +301,11 @@ class HydroPage(QWidget):
                 data["water"], ei=ei, cc=cc, ck=ck
             )
             
-            # Update display with calculated or custom values
-            self.result_label.setText(f"Result: {result:.2e}")
+            # Clear previous results
+            self.results_display.clear()
+            
+            # Show result exactly as before
+            self.results_display.add_result("", f"kv = {result:.2e}")
             
             # Only update unchecked parameter displays
             if not (self.use_custom_params_check.isChecked() and self.result_EI_check.isChecked()):
@@ -340,7 +347,7 @@ class HydroPage(QWidget):
             input_widget.setEnabled(False)
             input_widget.clear()
 
-        self.result_label.setText("Result:")
+        self.results_display.clear()
         self.graph_viewer.clear_graph()
         self.graph_data = None
 

@@ -202,3 +202,127 @@ class ModernResultsSection(QWidget):
         
         self.parameters_layout.addLayout(grid)
         return checkbox
+
+class ModernResultsDisplay(QWidget):
+    """A modern-looking widget for displaying calculation results"""
+    def __init__(self):
+        super().__init__()
+        self.layout = QVBoxLayout(self)
+        self.layout.setSpacing(4)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Create a frame for the results
+        self.frame = QFrame()
+        self.frame.setObjectName("resultsFrame")
+        self.frame.setStyleSheet("""
+            QFrame#resultsFrame {
+                background-color: transparent;
+                border: 1px solid #007bff;
+                border-radius: 6px;
+            }
+            QLabel {
+                color: #2c3e50;
+                font-size: 14px;
+                padding: 2px;
+                font-family: "Segoe UI", Arial, sans-serif;
+            }
+            QLabel[class="value"] {
+                color: #007bff;
+                font-weight: 600;
+                font-size: 15px;
+            }
+            QLabel[class="unit"] {
+                color: #6c757d;
+                font-size: 13px;
+            }
+            QLabel[class="header"] {
+                color: #ffffff;
+                background-color: #007bff;
+                font-weight: 600;
+                padding: 3px 8px;
+                border-top-left-radius: 5px;
+                border-top-right-radius: 5px;
+                font-size: 12px;
+                min-height: 20px;
+                max-height: 20px;
+            }
+            QFrame[class="separator"] {
+                background-color: #e9ecef;
+                min-height: 1px;
+                max-height: 1px;
+            }
+        """)
+        
+        # Create layout for the frame
+        self.frame_layout = QVBoxLayout(self.frame)
+        self.frame_layout.setSpacing(2)
+        self.frame_layout.setContentsMargins(0, 0, 0, 12)
+        
+        # Add header
+        self.header = QLabel("Results")
+        self.header.setProperty("class", "header")
+        self.frame_layout.addWidget(self.header)
+        
+        # Add separator
+        self.separator = QFrame()
+        self.separator.setProperty("class", "separator")
+        self.frame_layout.addWidget(self.separator)
+        
+        # Create container for results
+        self.results_container = QWidget()
+        container_layout = QVBoxLayout(self.results_container)
+        container_layout.setContentsMargins(16, 4, 16, 0)
+        container_layout.setSpacing(0)
+        
+        # Create grid for results
+        self.grid = QGridLayout()
+        self.grid.setSpacing(0)
+        self.grid.setVerticalSpacing(1)
+        container_layout.addLayout(self.grid)
+        
+        self.frame_layout.addWidget(self.results_container)
+        
+        # Add frame to main layout
+        self.layout.addWidget(self.frame)
+        
+        # Keep track of current row
+        self.current_row = 0
+        
+    def add_result(self, label: str, value: str, unit: str = ""):
+        """Add a result row with label, value, and optional unit"""
+        if not label:  # For simple text display without label
+            text_widget = QLabel(value)
+            text_widget.setProperty("class", "value")
+            text_widget.setWordWrap(True)
+            text_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            text_widget.setContentsMargins(0, 0, 0, 0)
+            self.grid.addWidget(text_widget, self.current_row, 0, 1, 3)
+        else:
+            # Label
+            label_widget = QLabel(f"{label}:")
+            label_widget.setContentsMargins(0, 0, 0, 0)
+            self.grid.addWidget(label_widget, self.current_row, 0)
+            
+            # Value
+            value_widget = QLabel(value)
+            value_widget.setProperty("class", "value")
+            value_widget.setContentsMargins(0, 0, 0, 0)
+            self.grid.addWidget(value_widget, self.current_row, 1)
+            
+            # Unit (if provided)
+            if unit:
+                unit_widget = QLabel(unit)
+                unit_widget.setProperty("class", "unit")
+                unit_widget.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+                unit_widget.setContentsMargins(0, 0, 0, 0)
+                self.grid.addWidget(unit_widget, self.current_row, 2)
+        
+        self.current_row += 1
+        
+    def clear(self):
+        """Clear all results"""
+        while self.grid.count():
+            item = self.grid.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        self.current_row = 0
