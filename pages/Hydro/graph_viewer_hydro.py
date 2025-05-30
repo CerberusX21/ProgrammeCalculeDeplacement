@@ -1,6 +1,6 @@
 import math
 
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QCheckBox, QLabel, QHBoxLayout
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QCheckBox, QLabel, QHBoxLayout, QSizePolicy
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
@@ -14,6 +14,7 @@ class GraphViewer(QWidget):
 
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
+        self.canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         self.checkbox_stress = QCheckBox("Effective Stress")
         self.checkbox_conductivity = QCheckBox("Hydraulic Conductivity")
@@ -24,19 +25,37 @@ class GraphViewer(QWidget):
             checkbox.stateChanged.connect(self.update_graph_display)
 
         layout = QVBoxLayout()
-        self.show_row.addWidget(QLabel("Show Graphs:"))
-        self.show_row.addWidget(self.checkbox_stress)
-        self.show_row.addWidget(self.checkbox_conductivity)
-        layout.addLayout(self.show_row)
+        layout.setSpacing(4)
+        layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Create header row with minimal height
+        header_widget = QWidget()
+        header_widget.setFixedHeight(30)
+        header_layout = QHBoxLayout(header_widget)
+        header_layout.setContentsMargins(4, 0, 4, 0)
+        header_layout.setSpacing(8)
+        header_layout.addWidget(QLabel("Show Graphs:"))
+        header_layout.addWidget(self.checkbox_stress)
+        header_layout.addWidget(self.checkbox_conductivity)
+        header_layout.addStretch()
+        
+        layout.addWidget(header_widget)
         layout.addWidget(self.canvas)
 
         # Create coordinate label with preloaded line and monospace font
         self.coord_label = QLabel("Coordinates: x = --            y = --")
         self.coord_label.setFixedHeight(25)  # Fixed height for single line
-        self.coord_label.setStyleSheet("font-family: monospace;")  # Use monospace font for consistent spacing
+        self.coord_label.setStyleSheet("""
+            font-family: monospace;
+            padding: 4px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        """)
         layout.addWidget(self.coord_label)
 
         self.setLayout(layout)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         self.follow_dots = []
         self.lines = []
@@ -73,16 +92,14 @@ class GraphViewer(QWidget):
             e0 = self.graph_data["e0"]
             cc = self.graph_data["cc"]
 
-          
-
             e = e0 - cc * math.log10(sigma_v/sigma_0)
 
             line, = ax.plot([sigma_0, sigma_v], [e0, e], 'k-', marker='o')
 
-            ax.set_title("Effective Stress")
-            ax.set_xlabel("Effective Stress (σ') [kPa]")
-            ax.set_ylabel("Void Ratio (e)")
-            ax.grid(True)
+            ax.set_title("Effective Stress", pad=10)
+            ax.set_xlabel("Effective Stress (σ') [kPa]", labelpad=8)
+            ax.set_ylabel("Void Ratio (e)", labelpad=8)
+            ax.grid(True, alpha=0.3)
 
             self.lines.append(line)
             self.axes.append(ax)
@@ -101,16 +118,17 @@ class GraphViewer(QWidget):
 
             line, = ax.plot([xi, xf], [yi, yf], 'k-', marker='o')
 
-            ax.set_title("Hydraulic Conductivity")
-            ax.set_xlabel("Hydraulic Conductivity (k) [m/s]")
-            ax.set_ylabel("Void Ratio (e)")
-            ax.grid(True)
+            ax.set_title("Hydraulic Conductivity", pad=10)
+            ax.set_xlabel("Hydraulic Conductivity (k) [m/s]", labelpad=8)
+            ax.set_ylabel("Void Ratio (e)", labelpad=8)
+            ax.grid(True, alpha=0.3)
 
             self.lines.append(line)
             self.axes.append(ax)
             self.follow_dots.append(ax.plot([], [], 'ro')[0])
 
-        self.figure.tight_layout()
+        # Adjust layout to be more responsive
+        self.figure.tight_layout(pad=2.0)
         self.canvas.draw()
 
     def mouse_move(self, event):

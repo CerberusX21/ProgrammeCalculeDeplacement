@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QCheckBox, QLabel, QHBoxLayout
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QCheckBox, QLabel, QHBoxLayout, QSizePolicy
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
@@ -14,6 +14,7 @@ class GraphViewer(QWidget):
 
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
+        self.canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         self.checkbox_stress = QCheckBox("Effective Stress")
         self.show_row = QHBoxLayout()
@@ -23,18 +24,36 @@ class GraphViewer(QWidget):
         self.checkbox_stress.stateChanged.connect(self.update_graph_display)
 
         layout = QVBoxLayout()
-        self.show_row.addWidget(QLabel("Show Graphs:"))
-        self.show_row.addWidget(self.checkbox_stress)
-        layout.addLayout(self.show_row)
+        layout.setSpacing(4)
+        layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Create header row with minimal height
+        header_widget = QWidget()
+        header_widget.setFixedHeight(30)
+        header_layout = QHBoxLayout(header_widget)
+        header_layout.setContentsMargins(4, 0, 4, 0)
+        header_layout.setSpacing(8)
+        header_layout.addWidget(QLabel("Show Graphs:"))
+        header_layout.addWidget(self.checkbox_stress)
+        header_layout.addStretch()
+        
+        layout.addWidget(header_widget)
         layout.addWidget(self.canvas)
 
         # Create coordinate label with preloaded line and monospace font
         self.coord_label = QLabel("Coordinates: x = --            y = --")
         self.coord_label.setFixedHeight(25)  # Fixed height for single line
-        self.coord_label.setStyleSheet("font-family: monospace;")  # Use monospace font for consistent spacing
+        self.coord_label.setStyleSheet("""
+            font-family: monospace;
+            padding: 4px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        """)
         layout.addWidget(self.coord_label)
 
         self.setLayout(layout)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         self.follow_dots = []
         self.lines = []
@@ -106,9 +125,9 @@ class GraphViewer(QWidget):
             y_vals = np.clip(y_vals, 0.01, 5)
 
             line1, = ax1.plot(x_vals, y_vals, color='blue', linewidth=2)
-            ax1.set_title("Void Ratio vs Effective Stress")
-            ax1.set_xlabel("Effective Stress (σ') [kPa]")
-            ax1.set_ylabel("Void Ratio (e)")
+            ax1.set_title("Void Ratio vs Effective Stress", pad=10)
+            ax1.set_xlabel("Effective Stress (σ') [kPa]", labelpad=8)
+            ax1.set_ylabel("Void Ratio (e)", labelpad=8)
             ax1.set_xscale("log")
             ax1.set_xlim(left=x_display_min, right=x_max)
             
@@ -145,7 +164,6 @@ class GraphViewer(QWidget):
                     # Point sur la courbe
                     ax1.plot(sigma_v, e_final, 'ro', markersize=8)
                 
-                    
                     # Affichage des valeurs
                     ax1.text(sigma_v, e_final - 0.1, f"(σᵥ={sigma_v:.1f}, e={e_final:.3f})", 
                             color='black', fontweight='bold', ha='center')
@@ -154,7 +172,8 @@ class GraphViewer(QWidget):
             self.axes.append(ax1)
             self.follow_dots.append(ax1.plot([], [], 'ro')[0])
         
-        self.figure.tight_layout()
+        # Adjust layout to be more responsive
+        self.figure.tight_layout(pad=2.0)
         self.canvas.draw()
 
     def mouse_move(self, event):
