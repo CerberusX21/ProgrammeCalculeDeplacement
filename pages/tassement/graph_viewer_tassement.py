@@ -1,3 +1,5 @@
+from typing import Dict, List, Optional, Tuple, Any
+
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QCheckBox, QLabel, QHBoxLayout, QSizePolicy
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -6,43 +8,68 @@ import math
 
 
 class GraphViewer(QWidget):
+    """A widget for displaying settlement graphs with interactive features."""
+
+    GRAPH_CONFIG = {
+        "title": "Void Ratio vs Effective Stress",
+        "xlabel": "Effective Stress (σ') [kPa]",
+        "ylabel": "Void Ratio (e)",
+        "checkbox_label": "Effective Stress"
+    }
+
     def __init__(self):
         super().__init__()
-        self.graph_data = None
-        self.ei_value = None
-        self.is_tassement = False
+        self.graph_data: Optional[Dict[str, float]] = None
+        self.ei_value: Optional[float] = None
+        self.is_tassement: bool = False
+        self.follow_dots: List[Any] = []
+        self.lines: List[Any] = []
+        self.axes: List[Any] = []
 
+        self._init_ui()
+        self._setup_canvas()
+        self._setup_checkboxes()
+        self._setup_coord_label()
+        self._connect_signals()
+
+    def _init_ui(self) -> None:
+        """Initialize the main UI layout."""
+        self.layout = QVBoxLayout()
+        self.layout.setSpacing(4)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.layout)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+    def _setup_canvas(self) -> None:
+        """Set up the matplotlib canvas."""
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
         self.canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
-        self.checkbox_stress = QCheckBox("Effective Stress")
+    def _setup_checkboxes(self) -> None:
+        """Set up the graph selection checkboxes."""
+        self.checkbox_stress = QCheckBox(self.GRAPH_CONFIG["checkbox_label"])
         self.show_row = QHBoxLayout()
 
-        # Configuration des checkboxes
-        self.checkbox_stress.setChecked(True)
-        self.checkbox_stress.stateChanged.connect(self.update_graph_display)
-
-        layout = QVBoxLayout()
-        layout.setSpacing(4)
-        layout.setContentsMargins(0, 0, 0, 0)
-        
         # Create header row with minimal height
         header_widget = QWidget()
         header_widget.setFixedHeight(30)
         header_layout = QHBoxLayout(header_widget)
         header_layout.setContentsMargins(4, 0, 4, 0)
         header_layout.setSpacing(8)
+        
         header_layout.addWidget(QLabel("Show Graphs:"))
+        self.checkbox_stress.setChecked(True)
         header_layout.addWidget(self.checkbox_stress)
         header_layout.addStretch()
         
-        layout.addWidget(header_widget)
-        layout.addWidget(self.canvas)
+        self.layout.addWidget(header_widget)
+        self.layout.addWidget(self.canvas)
 
-        # Create coordinate label with preloaded line and monospace font
+    def _setup_coord_label(self) -> None:
+        """Set up the coordinate display label."""
         self.coord_label = QLabel("Coordinates: x = --            y = --")
-        self.coord_label.setFixedHeight(25)  # Fixed height for single line
+        self.coord_label.setFixedHeight(25)
         self.coord_label.setStyleSheet("""
             font-family: monospace;
             padding: 4px;
@@ -50,143 +77,164 @@ class GraphViewer(QWidget):
             border: 1px solid #dee2e6;
             border-radius: 4px;
         """)
-        layout.addWidget(self.coord_label)
+        self.layout.addWidget(self.coord_label)
 
-        self.setLayout(layout)
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-
-        self.follow_dots = []
-        self.lines = []
-        self.axes = []
-
+    def _connect_signals(self) -> None:
+        """Connect widget signals to their handlers."""
+        self.checkbox_stress.stateChanged.connect(self.update_graph_display)
         self.canvas.mpl_connect("motion_notify_event", self.mouse_move)
 
-
-    def set_graph_data(self, graph_data):
+    def set_graph_data(self, graph_data: Dict[str, float]) -> None:
+        """Set the data for the graph and update the display."""
         self.graph_data = graph_data
         self.update_graph_display()
 
-    def set_ei_value(self, value):
+    def set_ei_value(self, value: Optional[float]) -> None:
+        """Set the initial void ratio value and update display if needed."""
         self.ei_value = value
-        # Redessiner le graphique si les données sont déjà disponibles
         if self.graph_data:
             self.update_graph_display()
 
-    def set_is_tassement(self, is_tassement: bool):
+    def set_is_tassement(self, is_tassement: bool) -> None:
+        """Set the settlement mode and update display if needed."""
         self.is_tassement = is_tassement
-        # Redessiner le graphique si nécessaire
         if self.graph_data:
             self.update_graph_display()
 
-    def update_graph_display(self):
-        if not self.graph_data:
+    def update_graph_display(self) -> None:
+        """Update the graph display based on current data and checkbox state."""
+        if not self.graph_data or not self.checkbox_stress.isChecked():
+            self._clear_figure()
+            self.canvas.draw()
             return
 
+        self._clear_figure()
+        self._plot_stress_graph()
+        self.figure.tight_layout(pad=2.0)
+        self.canvas.draw()
+
+    def _clear_figure(self) -> None:
+        """Clear the figure and reset graph-related lists."""
         self.figure.clear()
         self.follow_dots = []
         self.lines = []
         self.axes = []
 
-        # Détermine combien de graphiques afficher
-        show_stress = self.checkbox_stress.isChecked()
-        
-        if not show_stress:
-            self.canvas.draw()
-            return
-            
-        cols = 1  # Seulement le graphique de effective stress
-        pos = 1
+    def _plot_stress_graph(self) -> None:
+        """Plot the effective stress graph with settlement data."""
+        ax = self.figure.add_subplot(1, 1, 1)
 
-        # Variables communes
-        try:
-            sigma0 = self.graph_data.get("sigma0", 20)  # Contrainte initiale
-            sigma_v = self.graph_data.get("sigma_v", 100)  # Contrainte finale
-            e0_star = self.graph_data["E0"]  # Indice des vides initial
-            cc_star = self.graph_data["Cc"]  # Coefficient de compression
-        except KeyError as e:
-            return
+        # Extract data points
+        sigma0 = self.graph_data.get("sigma0", 20)
+        sigma_v = self.graph_data.get("sigma_v", 100)
+        e0_star = self.graph_data["E0"]
+        cc_star = self.graph_data["Cc"]
 
-        # -------- Courbe Effective stress --------
-        if show_stress:
-            ax1 = self.figure.add_subplot(1, cols, pos)
-          
-            # Définir la plage d'x : commencer à sigma0, aller jusqu'à sigma_v * 1.5
-            x_min = sigma0  # La courbe commence à sigma0
-            x_max = sigma_v * 1.5
-            x_vals = np.logspace(np.log10(x_min), np.log10(x_max), 200)
-            
-            # Définir les limites d'affichage de l'axe (peut commencer à 0 ou une valeur plus faible)
-            x_display_min = max(0.1, sigma0 * 0.1)  # Pour l'affichage de l'axe
-            
-            # FORMULE : e = e0* - Cc* * log10(σ'/σ0)
-            # Le point (sigma0, e0*) est sur la courbe
-            # Le point (sigma_v, e_final) est aussi sur la courbe
-            y_vals = [e0_star - cc_star * math.log10(s / sigma0) for s in x_vals]
-            y_vals = np.clip(y_vals, 0.01, 5)
+        # Calculate plot range
+        x_min = sigma0
+        x_max = sigma_v * 1.5
+        x_vals = np.logspace(np.log10(x_min), np.log10(x_max), 200)
+        x_display_min = max(0.1, sigma0 * 0.1)
 
-            line1, = ax1.plot(x_vals, y_vals, color='blue', linewidth=2)
-            ax1.set_title("Void Ratio vs Effective Stress", pad=10)
-            ax1.set_xlabel("Effective Stress (σ') [kPa]", labelpad=8)
-            ax1.set_ylabel("Void Ratio (e)", labelpad=8)
-            ax1.set_xscale("log")
-            ax1.set_xlim(left=x_display_min, right=x_max)
-            
-            # Calculer la valeur maximale pour l'axe Y
-            y_max = e0_star + 0.5
-            if self.ei_value is not None:
-                y_max = max(y_max, self.ei_value + 0.3)
-            ax1.set_ylim(bottom=0, top=y_max)
-            ax1.grid(True, alpha=0.3)
+        # Calculate void ratio values
+        y_vals = [e0_star - cc_star * math.log10(s / sigma0) for s in x_vals]
+        y_vals = np.clip(y_vals, 0.01, 5)
 
-            # Affichage du point ei si on est en mode tassement et que ei est défini
-            if self.is_tassement and self.ei_value is not None:
-                if abs(self.ei_value - e0_star) < 0.001:
-                    # ei ≈ e0 : point sur la courbe à sigma0
-                    ax1.plot(sigma0, self.ei_value, 'go', markersize=8)
-                    ax1.text(sigma0 * 1.2, self.ei_value, f"eᵢ={self.ei_value:.3f}", 
-                            color='black', fontweight='bold', ha='left')
-                else:
-                    # ei ≠ e0 : ligne pointillée verticale depuis e0 jusqu'à ei
-                    ax1.plot([sigma0, sigma0], [e0_star, self.ei_value], color='black', linestyle=':', linewidth=2)
-                    ax1.plot(sigma0, self.ei_value, 'go', markersize=8)
-                    ax1.text(sigma0 * 1.2, self.ei_value, f"eᵢ={self.ei_value:.3f}", 
-                            color='black', fontweight='bold', ha='left')
+        # Plot main curve
+        line1, = ax.plot(x_vals, y_vals, color='blue', linewidth=2)
+        self._configure_axis(ax)
+        self._set_axis_limits(ax, x_display_min, x_max, e0_star)
+        self._add_graph_elements(ax, line1)
 
-            # Point de départ : (sigma0, e0)
-            ax1.plot(sigma0, e0_star, 'bo', markersize=8)
-            ax1.text(sigma0, e0_star + 0.05, f"(σ₀={sigma0:.1f}, e₀={e0_star:.3f})", 
+        # Add settlement-specific points and annotations
+        self._add_settlement_points(ax, sigma0, sigma_v, e0_star, cc_star)
+
+    def _configure_axis(self, ax: Any) -> None:
+        """Configure the axis with titles and grid."""
+        ax.set_title(self.GRAPH_CONFIG["title"], pad=10)
+        ax.set_xlabel(self.GRAPH_CONFIG["xlabel"], labelpad=8)
+        ax.set_ylabel(self.GRAPH_CONFIG["ylabel"], labelpad=8)
+        ax.set_xscale("log")
+        ax.grid(True, alpha=0.3)
+
+    def _set_axis_limits(self, ax: Any, x_min: float, x_max: float, e0_star: float) -> None:
+        """Set the axis limits for the plot."""
+        ax.set_xlim(left=x_min, right=x_max)
+        y_max = e0_star + 0.5
+        if self.ei_value is not None:
+            y_max = max(y_max, self.ei_value + 0.3)
+        ax.set_ylim(bottom=0, top=y_max)
+
+    def _add_graph_elements(self, ax: Any, line: Any) -> None:
+        """Add the line and follow dot to the tracking lists."""
+        self.lines.append(line)
+        self.axes.append(ax)
+        self.follow_dots.append(ax.plot([], [], 'ro')[0])
+
+    def _add_settlement_points(self, ax: Any, sigma0: float, sigma_v: float, 
+                             e0_star: float, cc_star: float) -> None:
+        """Add settlement-specific points and annotations to the graph."""
+        # Add initial point
+        ax.plot(sigma0, e0_star, 'bo', markersize=8)
+        ax.text(sigma0, e0_star + 0.05, f"(σ₀={sigma0:.1f}, e₀={e0_star:.3f})", 
+                color='black', fontweight='bold', ha='center')
+
+        # Add ei point if in settlement mode
+        if self.is_tassement and self.ei_value is not None:
+            self._add_ei_point(ax, sigma0, e0_star)
+
+        # Add final point if sigma_v is valid
+        if sigma_v > 0:
+            self._add_final_point(ax, sigma0, sigma_v, e0_star, cc_star)
+
+    def _add_ei_point(self, ax: Any, sigma0: float, e0_star: float) -> None:
+        """Add the initial void ratio point to the graph."""
+        if abs(self.ei_value - e0_star) < 0.001:
+            # ei ≈ e0: point on the curve at sigma0
+            ax.plot(sigma0, self.ei_value, 'go', markersize=8)
+            ax.text(sigma0 * 1.2, self.ei_value, f"eᵢ={self.ei_value:.3f}", 
+                    color='black', fontweight='bold', ha='left')
+        else:
+            # ei ≠ e0: dotted vertical line from e0 to ei
+            ax.plot([sigma0, sigma0], [e0_star, self.ei_value], 
+                   color='black', linestyle=':', linewidth=2)
+            ax.plot(sigma0, self.ei_value, 'go', markersize=8)
+            ax.text(sigma0 * 1.2, self.ei_value, f"eᵢ={self.ei_value:.3f}", 
+                    color='black', fontweight='bold', ha='left')
+
+    def _add_final_point(self, ax: Any, sigma0: float, sigma_v: float, 
+                        e0_star: float, cc_star: float) -> None:
+        """Add the final point to the graph."""
+        e_final = e0_star - cc_star * math.log10(sigma_v / sigma0)
+        if 0 < e_final < 5:
+            ax.plot(sigma_v, e_final, 'ro', markersize=8)
+            ax.text(sigma_v, e_final - 0.1, f"(σᵥ={sigma_v:.1f}, e={e_final:.3f})", 
                     color='black', fontweight='bold', ha='center')
 
-            # Point final : (sigma_v, e_final)
-            if sigma_v > 0:
-                e_final = e0_star - cc_star * math.log10(sigma_v / sigma0)
-                if 0 < e_final < 5:
-                    # Point sur la courbe
-                    ax1.plot(sigma_v, e_final, 'ro', markersize=8)
-                
-                    # Affichage des valeurs
-                    ax1.text(sigma_v, e_final - 0.1, f"(σᵥ={sigma_v:.1f}, e={e_final:.3f})", 
-                            color='black', fontweight='bold', ha='center')
-
-            self.lines.append(line1)
-            self.axes.append(ax1)
-            self.follow_dots.append(ax1.plot([], [], 'ro')[0])
-        
-        # Adjust layout to be more responsive
-        self.figure.tight_layout(pad=2.0)
-        self.canvas.draw()
-
-    def mouse_move(self, event):
-        if event.inaxes is None or event.xdata is None:
-            self.coord_label.setText("Coordinates: x = --            y = --")
-            for dot in self.follow_dots:
-                dot.set_visible(False)
-            self.canvas.draw_idle()
+    def mouse_move(self, event: Any) -> None:
+        """Handle mouse movement over the graph."""
+        if not self._is_valid_mouse_event(event):
+            self._reset_coordinate_display()
             return
 
+        self._update_coordinate_display(event)
+
+    def _is_valid_mouse_event(self, event: Any) -> bool:
+        """Check if the mouse event is valid for coordinate tracking."""
+        return event.inaxes is not None and event.xdata is not None
+
+    def _reset_coordinate_display(self) -> None:
+        """Reset the coordinate display to default state."""
+        self.coord_label.setText("Coordinates: x = --            y = --")
+        for dot in self.follow_dots:
+            dot.set_visible(False)
+        self.canvas.draw_idle()
+
+    def _update_coordinate_display(self, event: Any) -> None:
+        """Update the coordinate display based on mouse position."""
         updated = False
 
-        for i, (line, ax, dot) in enumerate(zip(self.lines, self.axes, self.follow_dots)):
+        for line, ax, dot in zip(self.lines, self.axes, self.follow_dots):
             if event.inaxes != ax:
                 dot.set_visible(False)
                 continue
@@ -205,7 +253,6 @@ class GraphViewer(QWidget):
 
             dot.set_data([x], [y])
             dot.set_visible(True)
-            # Format x with fixed width of 12 characters (including scientific notation)
             x_str = f"{x:.4g}".ljust(12)
             self.coord_label.setText(f"Coordinates: x = {x_str}  y = {y:.4f}")
             updated = True
@@ -214,7 +261,8 @@ class GraphViewer(QWidget):
             self.coord_label.setText("Coordinates: x = --            y = --")
         self.canvas.draw_idle()
 
-    def clear_graph(self):
+    def clear_graph(self) -> None:
+        """Clear all graph data and reset the display."""
         self.graph_data = None
         self.figure.clear()
         self.canvas.draw_idle()
