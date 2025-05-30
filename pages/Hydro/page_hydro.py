@@ -229,54 +229,54 @@ class HydroPage(QWidget):
             "Fine fraction median diameter": FormulaD50ff
         }.get(data["type"])
 
-        # Get initial calculated values
+        # Initialize custom values as None
+        ei = None
+        cc = None
+        ck = None
+
+        # Only use custom values for checked parameters
+        if self.use_custom_params_check.isChecked():
+            if self.result_EI_check.isChecked():
+                try:
+                    ei = float(self.result_EI_input.text())
+                except ValueError:
+                    QMessageBox.warning(self, "Invalid Value", "Please enter a valid number for Initial thawed void ratio")
+                    return
+
+            if self.result_Cc_check.isChecked():
+                try:
+                    cc = float(self.result_Cc_input.text())
+                except ValueError:
+                    QMessageBox.warning(self, "Invalid Value", "Please enter a valid number for Thawed soil compression index")
+                    return
+
+            if self.result_Ck_check.isChecked():
+                try:
+                    ck = float(self.result_Ck_input.text())
+                except ValueError:
+                    QMessageBox.warning(self, "Invalid Value", "Please enter a valid number for Hydraulic conductivity index")
+                    return
+
+        # Calculate with custom or calculated values
         try:
             result, ei_calc, cc_calc, ck_calc, e0, sigma_0, kv0, sigma_v = formula_class().calculate(
                 data["type_sol"], data["pores_sol"], data["compress_sol"], data["density_sol"],
-                data["water"], ei=None, cc=None, ck=None
-            )
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Calculation error: {e}")
-            return
-
-        # Initialize with calculated values
-        ei = ei_calc
-        cc = cc_calc
-        ck = ck_calc
-
-        # For custom values
-        if self.use_custom_params_check.isChecked():
-            # Check each parameter's checkbox and update if checked
-            for widget in self.results_group.findChildren(QCheckBox):
-                if widget.isChecked():
-                    try:
-                        if "Initial thawed void ratio" in widget.text():
-                            ei = float(self.result_EI_input.text())
-                        elif "Thawed soil compression index" in widget.text():
-                            cc = float(self.result_Cc_input.text())
-                        elif "Hydraulic conductivity index" in widget.text():
-                            ck = float(self.result_Ck_input.text())
-                    except ValueError:
-                        QMessageBox.warning(self, "Invalid Value", f"Please enter a valid number for {widget.text()}")
-                        return
-
-        # Always update display
-        self.result_EI_input.setText(f"{ei:.2f}")
-        self.result_Cc_input.setText(f"{cc:.2f}")
-        self.result_Ck_input.setText(f"{ck:.2f}")
-
-        # Final calculation with custom or calculated values
-        try:
-            result, ei, cc, ck, e0, sigma_0, kv0, sigma_v = formula_class().calculate(
-                data["type_sol"], data["pores_sol"], data["compress_sol"], data["density_sol"],
                 data["water"], ei=ei, cc=cc, ck=ck
             )
+            
+            # Update display with calculated or custom values
             self.result_label.setText(f"Result: {result:.2e}")
-            self.result_EI_input.setText(f"{ei:.2f}")
-            self.result_Cc_input.setText(f"{cc:.2f}")
-            self.result_Ck_input.setText(f"{ck:.2f}")
+            
+            # Only update unchecked parameter displays
+            if not (self.use_custom_params_check.isChecked() and self.result_EI_check.isChecked()):
+                self.result_EI_input.setText(f"{ei_calc:.2f}")
+            if not (self.use_custom_params_check.isChecked() and self.result_Cc_check.isChecked()):
+                self.result_Cc_input.setText(f"{cc_calc:.2f}")
+            if not (self.use_custom_params_check.isChecked() and self.result_Ck_check.isChecked()):
+                self.result_Ck_input.setText(f"{ck_calc:.2f}")
+            
             self.graph_data = {
-                "result": result, "ei": ei, "cc": cc, "ck": ck,
+                "result": result, "ei": ei or ei_calc, "cc": cc or cc_calc, "ck": ck or ck_calc,
                 "e0": e0, "sigma_0": sigma_0, "kv0": kv0, "sigma_v": sigma_v
             }
             self.graph_viewer.set_graph_data(self.graph_data)
@@ -314,12 +314,36 @@ class HydroPage(QWidget):
     def _toggle_custom_params(self, state):
         is_checked = state == Qt.CheckState.Checked.value
         self.results_group.setVisible(is_checked)
-        self.result_EI_input.setEnabled(is_checked)
-        self.result_Cc_input.setEnabled(is_checked)
-        self.result_Ck_input.setEnabled(is_checked)
-        self.result_EI_unit.setEnabled(is_checked)
-        self.result_Cc_unit.setEnabled(is_checked)
-        self.result_Ck_unit.setEnabled(is_checked)
+        
+        # When showing the custom results, ensure everything starts disabled
+        if is_checked:
+            # Reset and disable all checkboxes
+            self.result_EI_check.setChecked(False)
+            self.result_Cc_check.setChecked(False)
+            self.result_Ck_check.setChecked(False)
+            
+            # Ensure all inputs are disabled and styled accordingly
+            self.result_EI_input.setEnabled(False)
+            self.result_Cc_input.setEnabled(False)
+            self.result_Ck_input.setEnabled(False)
+            self.result_EI_unit.setEnabled(False)
+            self.result_Cc_unit.setEnabled(False)
+            self.result_Ck_unit.setEnabled(False)
+            
+            # Apply disabled styling
+            disabled_style = """
+                QLineEdit:disabled, QComboBox:disabled {
+                    background-color: #f0f0f0;
+                    color: #666666;
+                    border: 1px solid #cccccc;
+                }
+            """
+            self.result_EI_input.setStyleSheet(disabled_style)
+            self.result_Cc_input.setStyleSheet(disabled_style)
+            self.result_Ck_input.setStyleSheet(disabled_style)
+            self.result_EI_unit.setStyleSheet(disabled_style)
+            self.result_Cc_unit.setStyleSheet(disabled_style)
+            self.result_Ck_unit.setStyleSheet(disabled_style)
 
     def _set_value_column_width(self, width=120):
         self.type_sol_input.setMinimumWidth(width)
@@ -348,20 +372,20 @@ class HydroPage(QWidget):
         # Create the results section
         results_section = ModernResultsSection()
         
-        # Add the parameters
-        results_section.add_result(
+        # Add the parameters and store the checkboxes
+        self.result_EI_check = results_section.add_result(
             "Initial thawed void ratio",
             self.result_EI_unit,
             self.result_EI_input
         )
         
-        results_section.add_result(
+        self.result_Cc_check = results_section.add_result(
             "Thawed soil compression index",
             self.result_Cc_unit,
             self.result_Cc_input
         )
         
-        results_section.add_result(
+        self.result_Ck_check = results_section.add_result(
             "Hydraulic conductivity index",
             self.result_Ck_unit,
             self.result_Ck_input

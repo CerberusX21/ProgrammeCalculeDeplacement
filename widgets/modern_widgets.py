@@ -120,63 +120,58 @@ class ModernResultsSection(QWidget):
     def __init__(self):
         super().__init__()
         self.layout = QVBoxLayout(self)
-        self.layout.setSpacing(8)  # Reduced from 12
-        self.layout.setContentsMargins(4, 6, 4, 6)  # Reduced from 8
+        self.layout.setSpacing(8)
+        self.layout.setContentsMargins(4, 6, 4, 6)
         
-        # Parameters will be added using add_result()
         self.parameters_layout = QVBoxLayout()
-        self.parameters_layout.setSpacing(4)  # Reduced from 6
+        self.parameters_layout.setSpacing(4)
         self.layout.addLayout(self.parameters_layout)
+
+        # Define the disabled style
+        self.DISABLED_STYLE = """
+            QLineEdit:disabled, QComboBox:disabled {
+                background-color: #f0f0f0;
+                color: #666666;
+                border: 1px solid #cccccc;
+            }
+        """
     
     def add_result(self, label, unit_widget, value_widget):
-        # Create grid layout for the widgets
+        # Create grid layout
         grid = QGridLayout()
-        grid.setSpacing(3)  # Reduced from 4
+        grid.setSpacing(3)
         grid.setContentsMargins(2, 0, 2, 0)
         
-        # Add headers with transparent background
-        type_header = QLabel("Type")
-        value_header = QLabel("Value")
-        unit_header = QLabel("Unit")
+        # Create checkbox
+        checkbox = QCheckBox(label)
         
-        for header in [type_header, value_header, unit_header]:
-            header.setProperty("class", "column-header")
-            header.setAlignment(Qt.AlignmentFlag.AlignLeft)
-            header.setStyleSheet("background: transparent;")
+        # Apply styles
+        value_widget.setStyleSheet(self.DISABLED_STYLE)
+        unit_widget.setStyleSheet(self.DISABLED_STYLE)
         
-        # Add headers to grid
-        grid.addWidget(type_header, 0, 0)
-        grid.addWidget(value_header, 0, 1)
-        grid.addWidget(unit_header, 0, 2)
-        
-        # Create a checkbox for the type column
-        type_checkbox = QCheckBox(label)
-        type_checkbox.setStyleSheet("background: transparent;")
-        type_checkbox.setChecked(False)  # Set unchecked by default
-        
-        # Connect checkbox to enable/disable the input fields
-        type_checkbox.stateChanged.connect(
-            lambda state: self._toggle_input_fields(state, [unit_widget, value_widget])
-        )
-        
-        # Add widgets to grid
-        grid.addWidget(type_checkbox, 1, 0)
-        grid.addWidget(value_widget, 1, 1)
-        grid.addWidget(unit_widget, 1, 2)
-        
-        # Set column stretches for responsive layout
-        grid.setColumnStretch(0, 4)  # Type column gets more space
-        grid.setColumnStretch(1, 1)  # Value column
-        grid.setColumnStretch(2, 1)  # Unit column
-        
-        # Initialize widgets as disabled since checkbox is unchecked by default
+        # Set initial state - disabled
         value_widget.setEnabled(False)
         unit_widget.setEnabled(False)
         
+        # Connect checkbox to enable/disable widgets
+        checkbox.stateChanged.connect(
+            lambda state: self._toggle_widgets(state, [value_widget, unit_widget])
+        )
+        
+        # Add widgets to grid
+        grid.addWidget(checkbox, 0, 0)
+        grid.addWidget(value_widget, 0, 1)
+        grid.addWidget(unit_widget, 0, 2)
+        
+        # Set column stretches
+        grid.setColumnStretch(0, 4)  # Checkbox
+        grid.setColumnStretch(1, 2)  # Value
+        grid.setColumnStretch(2, 1)  # Unit
+        
         self.parameters_layout.addLayout(grid)
+        return checkbox
     
-    def _toggle_input_fields(self, state, widgets):
-        """Enable or disable input fields based on checkbox state"""
-        is_enabled = state == Qt.CheckState.Checked.value
+    def _toggle_widgets(self, state, widgets):
+        enabled = state == Qt.CheckState.Checked.value
         for widget in widgets:
-            widget.setEnabled(is_enabled)
+            widget.setEnabled(enabled)
