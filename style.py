@@ -62,9 +62,11 @@ APP_STYLE = """
         background-color: #0d6efd;
         color: white;
         font-weight: bold;
-        padding: 10px 20px;
+        padding: 12px 25px;
         border-radius: 6px;
-        font-size: 14px;
+        font-size: 15px;
+        min-width: 100px;
+        min-height: 40px;
     }
 
     QPushButton:hover {
@@ -181,5 +183,29 @@ APP_STYLE = """
         font-weight: 700;
         font-size: 19px;
     }
-   
+
+    QLabel.column-header {
+        font-size: 10px;
+        color: #666666;
+        font-weight: 400;
+        padding: 0px;
+        margin: 0px 0px 0px 0px;
+    }
+
+    QLabel.parameter-label {
+        font-size: 14px;
+        font-weight: bold;
+        padding: 0px;
+        margin: 0px;
+    }
+
+    /* Custom results specific styles */
+    QComboBox[custom="true"] {
+        min-width: 200px;
+        max-width: 200px;
+    }
+    QLineEdit[custom="true"] {
+        min-width: 75px;
+        max-width: 75px;
+    }
 """

@@ -15,32 +15,28 @@ class CalculSigma0:
 
     def calculer(self) -> float:
         # Calcul brut selon type de sol
-        if self.type_sol == "wL":
-            num = self.e0_star - 0.014 * self.valeur - 0.42
-            denom = -0.0014 * self.valeur - 0.012
-            if denom == 0:
-                raise ValueError("Division by zero is not allowed.")
-            sigma0 = math.exp(num / denom)
+        if self.type_sol == "Liquid limit":
+            if self.etat_sol == 0:  # Ice-Rich
+                sigma0 = 0.0081 * self.valeur + 0.019
+            else:  # Ice-Poor
+                sigma0 = 0.0033 * self.valeur + 0.037
 
-        elif self.type_sol == "clay%":
-            num = self.e0_star - 0.0049 * self.valeur - 0.82
-            denom = -0.00063 * self.valeur - 0.060
-            if denom == 0:
-                raise ValueError("Division by zero is not allowed.")
-            sigma0 = math.exp(num / denom)
+        elif self.type_sol == "Clay percentage":
+            if self.etat_sol == 0:  # Ice-Rich
+                sigma0 = 0.0081 * self.valeur + 0.019
+            else:  # Ice-Poor
+                sigma0 = 0.0033 * self.valeur + 0.037
 
-        elif self.type_sol == "d50ff":
+        elif self.type_sol == "Fine fraction median diameter":
             if self.valeur <= 0:
-                raise ValueError("d50ff must be greater than zero for the log.")
-            log_d50 = math.log(self.valeur)
-            num = self.e0_star + 0.25 * log_d50 - 0.45
-            denom = 0.020 * log_d50 - 0.060
-            if denom == 0:
-                raise ValueError("Division by zero is not allowed.")
-            sigma0 = math.exp(num / denom)
+                raise ValueError("Fine fraction median diameter must be greater than zero for the log.")
+            if self.etat_sol == 0:  # Ice-Rich
+                sigma0 = -0.017 * math.log10(self.valeur) + 0.0175
+            else:  # Ice-Poor
+                sigma0 = -0.007 * math.log10(self.valeur) + 0.0075
 
         else:
-            raise ValueError("Soil type is invalid. Expected: wL, clay% or d50ff.")
+            raise ValueError("Soil type is invalid. Expected: Liquid limit, Clay percentage or Fine fraction median diameter.")
 
         # --- Application des seuils selon l'état du sol ---
         if self.etat_sol == 1:  # Ice-Poor

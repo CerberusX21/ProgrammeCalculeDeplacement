@@ -14,53 +14,53 @@ class TestEITassement(unittest.TestCase):
     """Tests pour la classe EI_Tassement"""
     
     def test_calcul_avec_w(self):
-        # Test avec teneur en eau w
-        ei = EI_Tassement(valeur_pore=50, Gs=2.7, type_pore="w")
+        # Test avec teneur en eau Thawed soil initial water content
+        ei = EI_Tassement(valeur_pore=50, Specific_gravity_of_solids=2.7, type_pore="Thawed soil initial water content")
         result = ei.calculer()
         expected = 0.01 * 50 * 2.7  # 1.35
         self.assertAlmostEqual(result, expected, places=6)
     
     def test_calcul_avec_rho_f(self):
-        # Test avec densité du sol gelé ρf
-        ei = EI_Tassement(valeur_pore=1.5, Gs=2.65, type_pore="ρf")
+        # Test avec densité du sol gelé Frozen buld density
+        ei = EI_Tassement(valeur_pore=1.5, Specific_gravity_of_solids=2.65, type_pore="Frozen buld density")
         result = ei.calculer()
         expected = (2.65 - 1.5) / (1.5 - 0.9174)
         self.assertAlmostEqual(result, expected, places=6)
     
     def test_calcul_avec_ef(self):
         # Test avec indice des vides du sol gelé ef
-        ei = EI_Tassement(valeur_pore=2.18, Gs=2.7, type_pore="ef")
+        ei = EI_Tassement(valeur_pore=2.18, Specific_gravity_of_solids=2.7, type_pore="ef")
         result = ei.calculer()
         expected = 2.18 / 1.09
         self.assertAlmostEqual(result, expected, places=6)
     
     def test_validation_gs_invalide(self):
-        # Test validation Gs hors limites
+        # Test validation Specific gravity of solids hors limites
         with self.assertRaises(ValueError):
-            EI_Tassement(valeur_pore=50, Gs=0.5, type_pore="w").calculer()
+            EI_Tassement(valeur_pore=50, Specific_gravity_of_solids=0.5, type_pore="Thawed soil initial water content").calculer()
         
         with self.assertRaises(ValueError):
-            EI_Tassement(valeur_pore=50, Gs=5.0, type_pore="w").calculer()
+            EI_Tassement(valeur_pore=50, Specific_gravity_of_solids=5.0, type_pore="Thawed soil initial water content").calculer()
     
     def test_validation_w_negatif(self):
         # Test w négatif
         with self.assertRaises(ValueError):
-            EI_Tassement(valeur_pore=-10, Gs=2.7, type_pore="w").calculer()
+            EI_Tassement(valeur_pore=-10, Specific_gravity_of_solids=2.7, type_pore="Thawed soil initial water content").calculer()
     
     def test_validation_rho_f_critique(self):
-        # Test ρf = 0.9174 (division par zéro)
+        # Test Frozen buld density = 0.9174 (division par zéro)
         with self.assertRaises(ValueError):
-            EI_Tassement(valeur_pore=0.9174, Gs=2.7, type_pore="ρf").calculer()
+            EI_Tassement(valeur_pore=0.9174, Specific_gravity_of_solids=2.7, type_pore="Frozen buld density").calculer()
     
     def test_validation_ef_limite(self):
         # Test ef > 4.36
         with self.assertRaises(ValueError):
-            EI_Tassement(valeur_pore=5.0, Gs=2.7, type_pore="ef").calculer()
+            EI_Tassement(valeur_pore=5.0, Specific_gravity_of_solids=2.7, type_pore="ef").calculer()
     
     def test_ei_star_limite_superieure(self):
         # Test avec ei* proche de 4 (limite supérieure)
         with self.assertRaises(ValueError) as context:
-            ei_calc = EI_Tassement(valeur_pore=500, Gs=2.7, type_pore="w")  # Valeur qui dépasse 4
+            ei_calc = EI_Tassement(valeur_pore=500, Specific_gravity_of_solids=2.7, type_pore="Thawed soil initial water content")  # Valeur qui dépasse 4
             ei_calc.calculer()  # Devrait lever une exception ValueError
     
     # Vérification que l'exception a bien été levée avec le bon message
@@ -87,15 +87,15 @@ class TestClassificationSol(unittest.TestCase):
         result = classif.classer()
         self.assertEqual(result, 2)  # Zone de transition
     
-    def test_classification_wL_ice_rich(self):
-        # Test avec wL - Ice-Rich
-        classif = ClassificationSol(ei_star=2.0, valeur_sol=30, type_sol="wL", marge=0.1)
+    def test_classification_Liquid_limit_ice_rich(self):
+        # Test avec Liquid limit - Ice-Rich
+        classif = ClassificationSol(ei_star=2.0, valeur_sol=30, type_sol="Liquid limit", marge=0.1)
         result = classif.classer()
         self.assertEqual(result, 0)  # Ice-Rich
     
     def test_classification_d50ff_ice_poor(self):
-        # Test avec d50ff - Ice-Poor
-        classif = ClassificationSol(ei_star=1.0, valeur_sol=0.01, type_sol="d50ff", marge=0.1)
+        # Test avec Fine fraction median diameter - Ice-Poor
+        classif = ClassificationSol(ei_star=1.0, valeur_sol=0.01, type_sol="Fine fraction median diameter", marge=0.1)
         result = classif.classer()
         self.assertEqual(result, 1)  # Ice-Poor
     
@@ -117,14 +117,14 @@ class TestCalculCcStar(unittest.TestCase):
     
     def test_calcul_cc_star_ice_poor(self):
         # Test Cc* pour Ice-Poor
-        calc = CalculCcStar(ei_star=2.0, valeur_type_sol=40, type_sol="wL", etat_sol=1)
+        calc = CalculCcStar(ei_star=2.0, valeur_type_sol=40, type_sol="Liquid limit", etat_sol=1)
         result = calc.calculer()
         expected = 0.74 * math.log(2.0) + 0.22
         self.assertAlmostEqual(result, expected, places=6)
     
-    def test_calcul_cc_star_ice_rich_wL(self):
-        # Test Cc* pour Ice-Rich avec wL
-        calc = CalculCcStar(ei_star=2.5, valeur_type_sol=50, type_sol="wL", etat_sol=0)
+    def test_calcul_cc_star_ice_rich_Liquid_limit(self):
+        # Test Cc* pour Ice-Rich avec Liquid limit
+        calc = CalculCcStar(ei_star=2.5, valeur_type_sol=50, type_sol="Liquid limit", etat_sol=0)
         result = calc.calculer()
         
         log_ei = math.log(2.5)
@@ -141,8 +141,8 @@ class TestCalculCcStar(unittest.TestCase):
         self.assertAlmostEqual(result, expected, places=6)
     
     def test_calcul_cc_star_ice_rich_d50ff(self):
-        # Test Cc* pour Ice-Rich avec d50ff
-        calc = CalculCcStar(ei_star=2.2, valeur_type_sol=0.01, type_sol="d50ff", etat_sol=0)
+        # Test Cc* pour Ice-Rich avec Fine fraction median diameter
+        calc = CalculCcStar(ei_star=2.2, valeur_type_sol=0.01, type_sol="Fine fraction median diameter", etat_sol=0)
         result = calc.calculer()
         
         log_ei = math.log(2.2)
@@ -153,17 +153,17 @@ class TestCalculCcStar(unittest.TestCase):
     def test_validation_ei_star_negatif(self):
         # Test ei* négatif
         with self.assertRaises(ValueError):
-            CalculCcStar(ei_star=-1.0, valeur_type_sol=40, type_sol="wL", etat_sol=1).calculer()
+            CalculCcStar(ei_star=-1.0, valeur_type_sol=40, type_sol="Liquid limit", etat_sol=1).calculer()
     
     def test_validation_seuil_minimal(self):
         # Test vérification du seuil minimal
         # Valeurs qui devraient donner un Cc* trop faible
         with self.assertRaises(ValueError):
-            CalculCcStar(ei_star=0.1, valeur_type_sol=20, type_sol="wL", etat_sol=0).calculer()
+            CalculCcStar(ei_star=0.1, valeur_type_sol=20, type_sol="Liquid limit", etat_sol=0).calculer()
     
-    def test_seuil_minimal_wL(self):
-        # Test calcul seuil minimal pour wL
-        calc = CalculCcStar(ei_star=2.0, valeur_type_sol=40, type_sol="wL", etat_sol=0)
+    def test_seuil_minimal_Liquid_limit(self):
+        # Test calcul seuil minimal pour Liquid limit
+        calc = CalculCcStar(ei_star=2.0, valeur_type_sol=40, type_sol="Liquid limit", etat_sol=0)
         seuil = calc.seuil_minimal()
         expected = 0.004 * 40 - 0.05
         self.assertAlmostEqual(seuil, expected, places=6)
@@ -176,15 +176,15 @@ class TestCalculCcStar(unittest.TestCase):
         self.assertAlmostEqual(seuil, expected, places=6)
     
     def test_seuil_minimal_d50ff(self):
-        # Test calcul seuil minimal pour d50ff
-        calc = CalculCcStar(ei_star=2.0, valeur_type_sol=0.01, type_sol="d50ff", etat_sol=0)
+        # Test calcul seuil minimal pour Fine fraction median diameter
+        calc = CalculCcStar(ei_star=2.0, valeur_type_sol=0.01, type_sol="Fine fraction median diameter", etat_sol=0)
         seuil = calc.seuil_minimal()
         expected = -0.04 * math.log(0.01) - 0.14
         self.assertAlmostEqual(seuil, expected, places=6)
 
     def test_calcul_cc_star_seuil_minimal(self):
         # Test pour s'assurer que Cc* respecte le seuil minimal
-        calc = CalculCcStar(ei_star=0.1, valeur_type_sol=20, type_sol="wL", etat_sol=1)
+        calc = CalculCcStar(ei_star=0.1, valeur_type_sol=20, type_sol="Liquid limit", etat_sol=1)
         with self.assertRaises(ValueError):
             calc.calculer()  # Doit lever une exception si Cc* est en dessous du seuil minimal
 
@@ -221,9 +221,9 @@ class TestCalculE0Tassement(unittest.TestCase):
 class TestCalculSigma0(unittest.TestCase):
     """Tests pour le calcul de σ'₀"""
     
-    def test_calcul_sigma0_wL_ice_poor(self):
-        # Test avec wL et Ice-Poor
-        calc = CalculSigma0(e0_star=1.5, type_sol="wL", valeur_sol=40, etat_sol=1)
+    def test_calcul_sigma0_Liquid_limit_ice_poor(self):
+        # Test avec Liquid limit et Ice-Poor
+        calc = CalculSigma0(e0_star=1.5, type_sol="Liquid limit", valeur_sol=40, etat_sol=1)
         result = calc.calculer()
         self.assertLessEqual(result, 50)  # Seuil max pour Ice-Poor
         self.assertGreater(result, 0)
@@ -236,8 +236,8 @@ class TestCalculSigma0(unittest.TestCase):
         self.assertLessEqual(result, 50)    # Seuil max
     
     def test_calcul_sigma0_d50ff_ice_rich(self):
-        # Test avec d50ff et Ice-Rich
-        calc = CalculSigma0(e0_star=1.8, type_sol="d50ff", valeur_sol=0.01, etat_sol=0)
+        # Test avec Fine fraction median diameter et Ice-Rich
+        calc = CalculSigma0(e0_star=1.8, type_sol="Fine fraction median diameter", valeur_sol=0.01, etat_sol=0)
         result = calc.calculer()
         self.assertGreaterEqual(result, 1)
         self.assertLessEqual(result, 50)
@@ -338,7 +338,7 @@ class TestCalculsIntegres(unittest.TestCase):
         print("\n=== Test complet : Sol Ice-Poor avec clay% ===")
         
         # Étape 1: Calcul de ei*
-        ei_calc = EI_Tassement(valeur_pore=60, Gs=2.7, type_pore="w")
+        ei_calc = EI_Tassement(valeur_pore=60, Specific_gravity_of_solids=2.7, type_pore="Thawed soil initial water content")
         ei_star = ei_calc.calculer()
         print(f"ei* = {ei_star:.4f}")
         
@@ -379,23 +379,23 @@ class TestCalculsIntegres(unittest.TestCase):
             self.assertGreater(e_final, 0)
             self.assertIsInstance(s_total, float)
     
-    def test_cas_complet_ice_rich_wL(self):
-        """Test complet : sol Ice-Rich avec wL"""
-        print("\n=== Test complet : Sol Ice-Rich avec wL ===")
+    def test_cas_complet_ice_rich_Liquid_limit(self):
+        """Test complet : sol Ice-Rich avec Liquid limit"""
+        print("\n=== Test complet : Sol Ice-Rich avec Liquid limit ===")
         
-        # Étape 1: Calcul de ei* avec ρf
-        ei_calc = EI_Tassement(valeur_pore=1.8, Gs=2.65, type_pore="ρf")
+        # Étape 1: Calcul de ei* avec Frozen buld density
+        ei_calc = EI_Tassement(valeur_pore=1.8, Specific_gravity_of_solids=2.65, type_pore="Frozen buld density")
         ei_star = ei_calc.calculer()
         print(f"ei* = {ei_star:.4f}")
         
         # Étape 2: Classification du sol
-        classif = ClassificationSol(ei_star=ei_star, valeur_sol=50, type_sol="wL")
+        classif = ClassificationSol(ei_star=ei_star, valeur_sol=50, type_sol="Liquid limit")
         etat_sol = classif.classer()
         print(f"Classification: {CLASSE_SOL[etat_sol]}")
         
         # Étape 3: Calcul complet si pas en zone de transition
         if etat_sol in [0, 1]:
-            cc_calc = CalculCcStar(ei_star=ei_star, valeur_type_sol=50, type_sol="wL", etat_sol=etat_sol)
+            cc_calc = CalculCcStar(ei_star=ei_star, valeur_type_sol=50, type_sol="Liquid limit", etat_sol=etat_sol)
             cc_star = cc_calc.calculer()
             print(f"Cc* = {cc_star:.4f}")
             
@@ -403,7 +403,7 @@ class TestCalculsIntegres(unittest.TestCase):
             e0_star = e0_calc.calculer()
             print(f"e0* = {e0_star:.4f}")
             
-            sigma0_calc = CalculSigma0(e0_star=e0_star, type_sol="wL", valeur_sol=50, etat_sol=etat_sol)
+            sigma0_calc = CalculSigma0(e0_star=e0_star, type_sol="Liquid limit", valeur_sol=50, etat_sol=etat_sol)
             sigma0 = sigma0_calc.calculer()
             print(f"σ'₀ = {sigma0:.2f} kPa")
             
@@ -421,22 +421,22 @@ class TestCalculsIntegres(unittest.TestCase):
                 print(f"σ'ᵥ = {sigma_v} kPa : e = {e_final:.4f}, S_total = {s_total:.2f}%")
     
     def test_cas_complet_d50ff(self):
-        """Test complet : sol avec d50ff"""
-        print("\n=== Test complet : Sol avec d50ff ===")
+        """Test complet : sol avec Fine fraction median diameter"""
+        print("\n=== Test complet : Sol avec Fine fraction median diameter ===")
         
         # Étape 1: Calcul de ei* avec ef
-        ei_calc = EI_Tassement(valeur_pore=3.0, Gs=2.68, type_pore="ef")
+        ei_calc = EI_Tassement(valeur_pore=3.0, Specific_gravity_of_solids=2.68, type_pore="ef")
         ei_star = ei_calc.calculer()
         print(f"ei* = {ei_star:.4f}")
         
         # Étape 2: Classification du sol
-        classif = ClassificationSol(ei_star=ei_star, valeur_sol=0.005, type_sol="d50ff")
+        classif = ClassificationSol(ei_star=ei_star, valeur_sol=0.005, type_sol="Fine fraction median diameter")
         etat_sol = classif.classer()
         print(f"Classification: {CLASSE_SOL[etat_sol]}")
         
         # Étape 3: Calcul complet
         if etat_sol in [0, 1]:
-            cc_calc = CalculCcStar(ei_star=ei_star, valeur_type_sol=0.005, type_sol="d50ff", etat_sol=etat_sol)
+            cc_calc = CalculCcStar(ei_star=ei_star, valeur_type_sol=0.005, type_sol="Fine fraction median diameter", etat_sol=etat_sol)
             cc_star = cc_calc.calculer()
             print(f"Cc* = {cc_star:.4f}")
             
@@ -444,7 +444,7 @@ class TestCalculsIntegres(unittest.TestCase):
             e0_star = e0_calc.calculer()
             print(f"e0* = {e0_star:.4f}")
             
-            sigma0_calc = CalculSigma0(e0_star=e0_star, type_sol="d50ff", valeur_sol=0.005, etat_sol=etat_sol)
+            sigma0_calc = CalculSigma0(e0_star=e0_star, type_sol="Fine fraction median diameter", valeur_sol=0.005, etat_sol=etat_sol)
             sigma0 = sigma0_calc.calculer()
             print(f"σ'₀ = {sigma0:.2f} kPa")
             
@@ -471,7 +471,7 @@ class TestCalculsIntegres(unittest.TestCase):
         print("\n=== Tests des cas limites ===")
         
         # Test avec ei* proche du seuil maximal
-        ei_calc = EI_Tassement(valeur_pore=4.35, Gs=2.7, type_pore="ef")
+        ei_calc = EI_Tassement(valeur_pore=4.35, Specific_gravity_of_solids=2.7, type_pore="ef")
         ei_star = ei_calc.calculer()
         print(f"ei* limite = {ei_star:.4f}")
         self.assertLess(ei_star, 4.0)

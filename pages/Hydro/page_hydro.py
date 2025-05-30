@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QComboBox, QLineEdit,
-    QLabel, QPushButton, QMessageBox, QCheckBox, QSizePolicy, QGridLayout, QFrame
+    QWidget, QVBoxLayout, QComboBox, QLineEdit,
+    QLabel, QPushButton, QMessageBox, QCheckBox, QGridLayout, QFrame, QSizePolicy, QHBoxLayout
 )
 from PyQt6.QtCore import Qt
 from style import APP_STYLE
@@ -8,13 +8,16 @@ from pages.Hydro.graph_viewer_hydro import GraphViewer
 from formulas.hydraulique.FormulaClay import FormulaClay
 from formulas.hydraulique.FormulaLiquid import FormulaLiquid
 from formulas.hydraulique.FormulaD50ff import FormulaD50ff
-from pages.tassement.page_tassement import ModernParameterWidget, ModernGroupBox
+from pages.soil_parameter import assemble_hydro_layout, init_unit_mappings, init_input_limits
+from widgets.modern_widgets import ModernParameterWidget, ModernGroupBox, ModernResultsSection, ModernResultsDisplay
 
 
 class HydroPage(QWidget):
     def __init__(self):
         super().__init__()
-        self.setMinimumSize(1400, 900)
+        
+        self.setMinimumSize(800, 600)  # Minimum size for usability
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setStyleSheet(APP_STYLE)
         self._other_page = None
         self._syncing = False
@@ -23,59 +26,68 @@ class HydroPage(QWidget):
         self._custom_ck_edited = False
         self.graph_data = None
         self._init_widgets()
-        self._init_unit_mappings()
-        self._init_input_limits()
+        # Initialize common mappings and limits from hydro_layout
+        init_unit_mappings(self)
+        init_input_limits(self)
         self._connect_unit_updates()
         self._set_initial_units()
-        self.result_label = QLabel("Result:")
-        self.result_label.setObjectName("ResultLabel")
+        
+        # Create the results display widget
+        self.results_display = ModernResultsDisplay()
+        self.results_display.setFixedHeight(150)  # Match settlement page height
+        
+        # Create the graph viewer
         self.graph_viewer = GraphViewer()
+        self.graph_viewer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        
         self.calculate_button = QPushButton("Calculate")
         self.reset_button = QPushButton("Reset")
         self.calculate_button.clicked.connect(self.calculate)
         self.reset_button.clicked.connect(self.reset)
-        self._assemble_layout()
-        # Pour syncroniser les données entre les pages
-        self.type_sol_input.textChanged.connect(self._sync_type_sol)
-        self.pores_input.textChanged.connect(self._sync_pores)
-        self.compress_input.textChanged.connect(self._sync_compress)
-        self.density_input.textChanged.connect(self._sync_density)
-        # Détection de saisie manuelle 
+        
+        # Set up the main layout first
+        assemble_hydro_layout(self)
+        
+        # Add the hydro-specific custom results section
+        self._setup_custom_results()
+        
+        # For syncing data between pages
+        self.type_sol_input.textChanged.connect(lambda value: self._sync_field('type_sol_input', value))
+        self.pores_input.textChanged.connect(lambda value: self._sync_field('pores_input', value))
+        self.compress_input.textChanged.connect(lambda value: self._sync_field('compress_input', value))
+        self.density_input.textChanged.connect(lambda value: self._sync_field('density_input', value))
+        # Manual input detection
         self.result_EI_input.textEdited.connect(self._on_custom_ei_edited)
         self.result_Cc_input.textEdited.connect(self._on_custom_cc_edited)
         self.result_Ck_input.textEdited.connect(self._on_custom_ck_edited)
         self.use_custom_params_check.stateChanged.connect(self._on_custom_check_changed)
+        self.use_custom_params_check.stateChanged.connect(self._toggle_custom_params)
 
     def set_other_page(self, other_page):
         self._other_page = other_page
 
-    def _sync_type_sol(self, value):
+    def _sync_field(self, field_name, value):
         if self._other_page and not self._syncing:
             self._other_page._syncing = True
-            self._other_page.type_sol_input.setText(value)
+            getattr(self._other_page, field_name).setText(value)
             self._other_page._syncing = False
-    def _sync_pores(self, value):
+
+    def _sync_combo(self, combo_name, index):
         if self._other_page and not self._syncing:
             self._other_page._syncing = True
-            self._other_page.pores_input.setText(value)
-            self._other_page._syncing = False
-    def _sync_compress(self, value):
-        if self._other_page and not self._syncing:
-            self._other_page._syncing = True
-            self._other_page.compress_input.setText(value)
-            self._other_page._syncing = False
-    def _sync_density(self, value):
-        if self._other_page and not self._syncing:
-            self._other_page._syncing = True
-            self._other_page.density_input.setText(value)
+            other_combo = getattr(self._other_page, combo_name)
+            other_combo.setCurrentIndex(index)
             self._other_page._syncing = False
 
     def _on_custom_ei_edited(self):
         self._custom_ei_edited = True
+
     def _on_custom_cc_edited(self):
         self._custom_cc_edited = True
+
     def _on_custom_ck_edited(self):
         self._custom_ck_edited = True
+
     def _on_custom_check_changed(self, state):
         if state == Qt.CheckState.Checked.value:
             self._custom_ei_edited = False
@@ -88,212 +100,60 @@ class HydroPage(QWidget):
         self.compress_input = self._create_line_edit("Value...")
         self.density_input = self._create_line_edit("Value...")
         self.density_input.setText("2.67")
-        self._set_value_column_width(120)
 
         self.type_sol = QComboBox()
-        self.type_sol.addItems(["clay%", "wL", "d50ff"])
+        self.type_sol.setProperty("type", "type")
+        self.type_sol.addItems(["Clay percentage", "Liquid limit", "Fine fraction median diameter"])
         self.type_sol_unit = QComboBox()
 
         self.pores_sol = QComboBox()
-        self.pores_sol.addItems(["W", "ρf", "ef*"])
+        self.pores_sol.setProperty("type", "type")
+        self.pores_sol.addItems(["Thawed soil initial water content", "Frozen buld density", "Frozen void ratio"])
         self.pores_sol_unit = QComboBox()
 
         self.compress_sol = QComboBox()
-        self.compress_sol.addItems(["σ′v"])
+        self.compress_sol.setProperty("type", "type")
+        self.compress_sol.addItems(["Effective vertical stress"])
         self.compress_sol_unit = QComboBox()
 
-        self.result_EI_input, self.result_EI_check = self._create_optional_input("Value...")
-        self.result_Cc_input, self.result_Cc_check = self._create_optional_input("Value...")
-        self.result_Ck_input, self.result_Ck_check = self._create_optional_input("Value...")
-
         self.density_sol = QComboBox()
-        self.density_sol.addItems(["Gs"])
+        self.density_sol.setProperty("type", "type")
+        self.density_sol.addItems(["Specific gravity of solids"])
         self.density_sol_unit = QComboBox()
         self.density_sol_unit.addItems(["-"])
 
+        # Update initial states of dropdowns with single options
+        self._update_combo_state(self.compress_sol)
+        self._update_combo_state(self.density_sol)
+        self._update_combo_state(self.density_sol_unit)
+
+        # Results widgets
         self.result_EI_input = self._create_line_edit("Value...")
         self.result_Cc_input = self._create_line_edit("Value...")
         self.result_Ck_input = self._create_line_edit("Value...")
 
-        self.result_EI_type = QComboBox()
-        self.result_EI_type.addItems(["ei*"])
+        # Results unit dropdowns
         self.result_EI_unit = QComboBox()
-        self.result_EI_unit.addItems(["-"])
+        self.result_EI_unit.addItems(["ei*"])
+        self._update_combo_state(self.result_EI_unit)
 
-        self.result_Cc_type = QComboBox()
-        self.result_Cc_type.addItems(["Cc*"])
         self.result_Cc_unit = QComboBox()
-        self.result_Cc_unit.addItems(["-"])
+        self.result_Cc_unit.addItems(["Cc*"])
+        self._update_combo_state(self.result_Cc_unit)
 
-        self.result_Ck_type = QComboBox()
-        self.result_Ck_type.addItems(["Ck*"])
         self.result_Ck_unit = QComboBox()
-        self.result_Ck_unit.addItems(["-"])
+        self.result_Ck_unit.addItems(["Ck*"])
+        self._update_combo_state(self.result_Ck_unit)
 
-    def _assemble_layout(self):
-        main_layout = QHBoxLayout()
-
-        # --- Paramètres à gauche ---
-        parameters_widget = QWidget()
-        parameters_layout = QVBoxLayout(parameters_widget)
-        parameters_layout.setSpacing(12)
-        parameters_layout.setContentsMargins(10, 10, 10, 10)
-
-        #  our les headers
-        def make_headers():
-            headers_layout = QGridLayout()
-            headers_layout.addWidget(QLabel("<b>Parameter</b>"), 0, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
-            headers_layout.addWidget(QLabel("<b>Type</b>"), 0, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
-            headers_layout.addWidget(QLabel("<b>Unit</b>"), 0, 2, alignment=Qt.AlignmentFlag.AlignHCenter)
-            headers_layout.addWidget(QLabel("<b>Value</b>"), 0, 3, alignment=Qt.AlignmentFlag.AlignHCenter)
-            headers_layout.setColumnStretch(0, 3)
-            headers_layout.setColumnStretch(1, 2)
-            headers_layout.setColumnStretch(2, 1)
-            headers_layout.setColumnStretch(3, 2)
-            return headers_layout
-
-        def make_separator():
-            sep = QFrame()
-            sep.setFrameShape(QFrame.Shape.HLine)
-            sep.setStyleSheet("background-color: #e2e8f0; height: 1px;")
-            return sep
-
-        # Soil group
-        soil_group = ModernGroupBox("Soil Type Parameters")
-        soil_layout = QVBoxLayout()
-        soil_layout.addLayout(make_headers())
-        soil_layout.addWidget(make_separator())
-        soil_param = ModernParameterWidget(
-            "Clay percentage / Liquid limit / Fine fraction",
-            self.type_sol, self.type_sol_unit, self.type_sol_input,
-            "Options: Clay percentage (clay%), Liquid limit (wL), Fine fraction median diameter (d50ff)"
-        )
-        soil_layout.addWidget(soil_param)
-        soil_group.setLayout(soil_layout)
-
-        # Pore group
-        pore_group = ModernGroupBox("Pore-Ice Parameters")
-        pore_layout = QVBoxLayout()
-        pore_layout.addLayout(make_headers())
-        pore_layout.addWidget(make_separator())
-        pore_param = ModernParameterWidget(
-            "Water content / Frozen density / Frozen void ratio",
-            self.pores_sol, self.pores_sol_unit, self.pores_input,
-            "Thawed soil initial water content (W), Frozen bulk density (ρf), Frozen void ratio (ef*)"
-        )
-        pore_layout.addWidget(pore_param)
-        pore_group.setLayout(pore_layout)
-
-        # Compression group
-        compress_group = ModernGroupBox("Soil Compression Parameters")
-        compress_layout = QVBoxLayout()
-        compress_layout.addLayout(make_headers())
-        compress_layout.addWidget(make_separator())
-        compress_param = ModernParameterWidget(
-            "Effective vertical stress",
-            self.compress_sol, self.compress_sol_unit, self.compress_input,
-            "Effective vertical stress (σ'v)"
-        )
-        compress_layout.addWidget(compress_param)
-        compress_group.setLayout(compress_layout)
-
-        # Gs group (Specific Gravity) - même format que Settlement
-        gs_group = ModernGroupBox("Specific Gravity of Solids")
-        gs_layout = QVBoxLayout()
-        gs_layout.addLayout(make_headers())
-        gs_layout.addWidget(make_separator())
-        self.density_sol = QComboBox()
-        self.density_sol.addItems(["Gs"])
-        self.density_sol_unit = QComboBox()
-        self.density_sol_unit.addItems(["-"])
-        gs_param = ModernParameterWidget(
-            "Specific gravity",
-            self.density_sol, self.density_sol_unit, self.density_input,
-            "Specific gravity of soil solids"
-        )
-        gs_layout.addWidget(gs_param)
-        gs_group.setLayout(gs_layout)
-
-        # Checkbox pour paramètres personnalisés
-        self.use_custom_params_check = QCheckBox("Use custom results")
-        self.use_custom_params_check.stateChanged.connect(self._toggle_custom_params)
-        custom_checkbox_widget = QWidget()
-        custom_checkbox_layout = QHBoxLayout(custom_checkbox_widget)
-        custom_checkbox_layout.setContentsMargins(0, 8, 0, 2)
-        custom_checkbox_layout.setAlignment(self.use_custom_params_check, Qt.AlignmentFlag.AlignLeft)
-        custom_checkbox_layout.addWidget(self.use_custom_params_check)
-        custom_checkbox_widget.setMaximumWidth(600)
-
-        # Results group (pour ei*, Cc*, Ck*)
-        results_group = ModernGroupBox("Indices and Ratios")
-        results_layout = QVBoxLayout()
-        results_layout.addLayout(make_headers())
-        results_layout.addWidget(make_separator())
-        # ei*
-        ei_param = ModernParameterWidget(
-            "Initial thawed void ratio",
-            self.result_EI_type, self.result_EI_unit, self.result_EI_input,
-            "Initial thawed void ratio (ei*)"
-        )
-        # Cc*
-        cc_param = ModernParameterWidget(
-            "Thawed soil compression index",
-            self.result_Cc_type, self.result_Cc_unit, self.result_Cc_input,
-            "Thawed soil compression index (Cc*)"
-        )
-        # Ck*
-        ck_param = ModernParameterWidget(
-            "Hydraulic conductivity index",
-            self.result_Ck_type, self.result_Ck_unit, self.result_Ck_input,
-            "Hydraulic conductivity index (Ck*)"
-        )
-        results_layout.addWidget(ei_param)
-        results_layout.addWidget(cc_param)
-        results_layout.addWidget(ck_param)
-        results_group.setLayout(results_layout)
-        results_group.setVisible(False)  # Masqué par défaut
-
-        # Ajout des groupes au layout
-        parameters_layout.addWidget(soil_group)
-        parameters_layout.addWidget(pore_group)
-        parameters_layout.addWidget(compress_group)
-        parameters_layout.addWidget(gs_group)
-        parameters_layout.addWidget(custom_checkbox_widget)
-        parameters_layout.addWidget(results_group)
-
-        # Boutons
-        button_layout = QHBoxLayout()
-        button_layout.setSpacing(10)
-        button_layout.addStretch()
-        button_layout.addWidget(self.reset_button)
-        button_layout.addWidget(self.calculate_button)
-        button_layout.addStretch()
-        parameters_layout.addLayout(button_layout)
-
-        # --- Résultats à droite ---
-        results_panel = QWidget()
-        results_panel.setObjectName("resultsPanel")
-        results_layout_right = QVBoxLayout(results_panel)
-        results_layout_right.setContentsMargins(10, 10, 10, 10)
-        results_layout_right.setSpacing(10)
-
-        results_title = QLabel("Hydraulic Results")
-        results_title.setObjectName("resultsTitle")
-        results_layout_right.addWidget(results_title)
-        results_layout_right.addWidget(self.result_label)
-
-        graph_title = QLabel("Hydraulic Conductivity Graph")
-        graph_title.setObjectName("graphTitle")
-        results_layout_right.addWidget(graph_title)
-        results_layout_right.addWidget(self.graph_viewer)
-
-        # --- Layout principal ---
-        main_layout.addWidget(parameters_widget, 1)
-        main_layout.addWidget(results_panel, 1)
-        self.setLayout(main_layout)
-
-        # Stocke pour accès dans d'autres méthodes
-        self.results_group = results_group
+        # Connect combo box changes
+        self.type_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('type_sol', idx))
+        self.type_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('type_sol_unit', idx))
+        self.pores_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('pores_sol', idx))
+        self.pores_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('pores_sol_unit', idx))
+        self.compress_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('compress_sol', idx))
+        self.compress_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('compress_sol_unit', idx))
+        self.density_sol.currentIndexChanged.connect(lambda idx: self._sync_combo('density_sol', idx))
+        self.density_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('density_sol_unit', idx))
 
     def _create_line_edit(self, placeholder):
         edit = QLineEdit()
@@ -308,32 +168,39 @@ class HydroPage(QWidget):
         checkbox.stateChanged.connect(lambda state: edit.setEnabled(state == Qt.CheckState.Checked.value))
         return edit, checkbox
 
-    def _init_unit_mappings(self):
-        self.type_unit_mapping = {
-            self.type_sol: {"clay%": ["%"], "wL": ["%"], "d50ff": ["mm"]},
-            self.pores_sol: {"W": ["kg/kg"], "ρf": ["kg/m3", "g/cm3"], "ef*": ["Direct"]},
-            self.compress_sol: {"σ′v": ["kPa"]},
-        }
-
-    def _init_input_limits(self):
-        self.input_limits = {
-            self.type_sol_unit: {"%": (1, 100), "mm": (0.001, 0.1)},
-            self.pores_sol_unit: {
-                "kg/kg": (0, float('inf')), "kg/m3": (900, 3000),
-                "g/cm3": (0.9, 3), "Direct": (0, float('inf'))
-            },
-            self.compress_sol_unit: {"kPa": (0, float('inf'))},
-        }
-
     def _connect_unit_updates(self):
         self.type_sol.currentIndexChanged.connect(lambda: self.update_unit_options(self.type_sol, self.type_sol_unit))
-        self.pores_sol.currentIndexChanged.connect(lambda: self.update_unit_options(self.pores_sol, self.pores_sol_unit))
-        self.compress_sol.currentIndexChanged.connect(lambda: self.update_unit_options(self.compress_sol, self.compress_sol_unit))
+        self.pores_sol.currentIndexChanged.connect(
+            lambda: self.update_unit_options(self.pores_sol, self.pores_sol_unit))
+        self.compress_sol.currentIndexChanged.connect(
+            lambda: self.update_unit_options(self.compress_sol, self.compress_sol_unit))
 
     def _set_initial_units(self):
         self.update_unit_options(self.type_sol, self.type_sol_unit)
         self.update_unit_options(self.pores_sol, self.pores_sol_unit)
         self.update_unit_options(self.compress_sol, self.compress_sol_unit)
+
+    def _update_combo_state(self, combo: QComboBox):
+        """Update the enabled state and style of a combo box based on number of items"""
+        has_multiple_options = combo.count() > 1
+        combo.setEnabled(has_multiple_options)
+        
+        if not has_multiple_options:
+            combo.setStyleSheet("""
+                QComboBox {
+                    background-color: #f0f0f0;
+                    color: #666666;
+                    border: 1px solid #cccccc;
+                }
+                QComboBox::drop-down {
+                    border: none;
+                }
+                QComboBox::down-arrow {
+                    image: none;
+                }
+            """)
+        else:
+            combo.setStyleSheet("")
 
     def update_unit_options(self, type_combo: QComboBox, unit_combo: QComboBox):
         selected_type = type_combo.currentText()
@@ -346,6 +213,9 @@ class HydroPage(QWidget):
             if current_unit in units:
                 unit_combo.setCurrentIndex(units.index(current_unit))
             unit_combo.blockSignals(False)
+            
+            # Update the combo box state based on number of options
+            self._update_combo_state(unit_combo)
 
     def validate_input(self, value: float, unit_combo):
         if unit_combo is False:
@@ -371,106 +241,90 @@ class HydroPage(QWidget):
             QMessageBox.critical(self, "Value Error", "Please enter valid numerical values.")
             return
 
+        # Validation des entrées
         validations = [
             (data["type_sol"], self.type_sol_unit, self.type_sol.currentText()),
             (data["pores_sol"], self.pores_sol_unit, self.pores_sol.currentText()),
             (data["compress_sol"], self.compress_sol_unit, self.compress_sol.currentText()),
-            (data["density_sol"], False, "Gs")
+            (data["density_sol"], False, "Specific gravity of solids")
         ]
-
         for value, unit_combo, label in validations:
             valid, min_val, max_val = self.validate_input(value, unit_combo)
             if not valid:
-                QMessageBox.warning(self, "Invalid value", f"The value for {label} must be between {min_val} and {max_val}.")
+                QMessageBox.warning(self, "Invalid value",
+                                    f"The value for {label} must be between {min_val} and {max_val}.")
                 return
 
         if self.pores_sol_unit.currentText() == "g/cm3":
             data["pores_sol"] /= 1000
 
-        if self.pores_sol.currentText() == "ρf" and data["pores_sol"] >= data["density_sol"]:
-            QMessageBox.warning(self, "Invalid value", "Make sure Gs > ρf")
+        if self.pores_sol.currentText() == "Frozen buld density" and data["pores_sol"] >= data["density_sol"]:
+            QMessageBox.warning(self, "Invalid value", "Make sure Specific gravity of solids > Frozen buld density")
             return
 
-        formula_class = {"clay%": FormulaClay, "wL": FormulaLiquid, "d50ff": FormulaD50ff}.get(data["type"])
+        formula_class = {
+            "Clay percentage": FormulaClay,
+            "Liquid limit": FormulaLiquid,
+            "Fine fraction median diameter": FormulaD50ff
+        }.get(data["type"])
 
-        # Pour les valeurs custom
+        # Initialize custom values as None
+        ei = None
+        cc = None
+        ck = None
+
+        # Only use custom values for checked parameters
         if self.use_custom_params_check.isChecked():
-            # Calcul automatique pour initialisation
-            try:
-                result, ei_calc, cc_calc, ck_calc, e0, sigma_0, kv0, sigma_v = formula_class().calculate(
-                    data["type_sol"], data["pores_sol"], data["compress_sol"], data["density_sol"],
-                    data["water"], ei=None, cc=None, ck=None
-                )
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Calculation error: {e}")
-                return
-            # EI*
-            if not self._custom_ei_edited:
-                self.result_EI_input.setText(f"{ei_calc:.2f}")
-                ei = ei_calc
-            else:
+            if self.result_EI_check.isChecked():
                 try:
                     ei = float(self.result_EI_input.text())
                 except ValueError:
-                    QMessageBox.warning(self, "Invalid ei*", "Please enter a valid number for ei*.")
+                    QMessageBox.warning(self, "Invalid Value", "Please enter a valid number for Initial thawed void ratio")
                     return
-            # Cc*
-            if not self._custom_cc_edited:
-                self.result_Cc_input.setText(f"{cc_calc:.2f}")
-                cc = cc_calc
-            else:
+
+            if self.result_Cc_check.isChecked():
                 try:
                     cc = float(self.result_Cc_input.text())
                 except ValueError:
-                    QMessageBox.warning(self, "Invalid Cc*", "Please enter a valid number for Cc*.")
+                    QMessageBox.warning(self, "Invalid Value", "Please enter a valid number for Thawed soil compression index")
                     return
-            # Ck*
-            if not self._custom_ck_edited:
-                self.result_Ck_input.setText(f"{ck_calc:.2f}")
-                ck = ck_calc
-            else:
+
+            if self.result_Ck_check.isChecked():
                 try:
                     ck = float(self.result_Ck_input.text())
                 except ValueError:
-                    QMessageBox.warning(self, "Invalid Ck*", "Please enter a valid number for Ck*.")
+                    QMessageBox.warning(self, "Invalid Value", "Please enter a valid number for Hydraulic conductivity index")
                     return
-            # Calcul final avec les valeurs custom ou éditées
-            try:
-                result, ei, cc, ck, e0, sigma_0, kv0, sigma_v = formula_class().calculate(
-                    data["type_sol"], data["pores_sol"], data["compress_sol"], data["density_sol"],
-                    data["water"], ei=ei, cc=cc, ck=ck
-                )
-                self.result_label.setText(f"Result: {result:.2e}")
-                self.result_EI_input.setText(f"{ei:.2f}")
-                self.result_Cc_input.setText(f"{cc:.2f}")
-                self.result_Ck_input.setText(f"{ck:.2f}")
-                self.graph_data = {
-                    "result": result, "ei": ei, "cc": cc, "ck": ck,
-                    "e0": e0, "sigma_0": sigma_0, "kv0": kv0, "sigma_v": sigma_v
-                }
-                self.graph_viewer.set_graph_data(self.graph_data)
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Calculation error: {e}")
-                return
-        else:
-           
-            try:
-                result, ei, cc, ck, e0, sigma_0, kv0, sigma_v = formula_class().calculate(
-                    data["type_sol"], data["pores_sol"], data["compress_sol"], data["density_sol"],
-                    data["water"], ei=None, cc=None, ck=None
-                )
-                self.result_label.setText(f"Result: {result:.2e}")
-                self.result_EI_input.setText(f"{ei:.2f}")
-                self.result_Cc_input.setText(f"{cc:.2f}")
-                self.result_Ck_input.setText(f"{ck:.2f}")
-                self.graph_data = {
-                    "result": result, "ei": ei, "cc": cc, "ck": ck,
-                    "e0": e0, "sigma_0": sigma_0, "kv0": kv0, "sigma_v": sigma_v
-                }
-                self.graph_viewer.set_graph_data(self.graph_data)
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Calculation error: {e}")
-                return
+
+        # Calculate with custom or calculated values
+        try:
+            result, ei_calc, cc_calc, ck_calc, e0, sigma_0, kv0, sigma_v = formula_class().calculate(
+                data["type_sol"], data["pores_sol"], data["compress_sol"], data["density_sol"],
+                data["water"], ei=ei, cc=cc, ck=ck
+            )
+            
+            # Clear previous results
+            self.results_display.clear()
+            
+            # Show result exactly as before
+            self.results_display.add_result("", f"kv = {result:.2e}")
+            
+            # Only update unchecked parameter displays
+            if not (self.use_custom_params_check.isChecked() and self.result_EI_check.isChecked()):
+                self.result_EI_input.setText(f"{ei_calc:.2f}")
+            if not (self.use_custom_params_check.isChecked() and self.result_Cc_check.isChecked()):
+                self.result_Cc_input.setText(f"{cc_calc:.2f}")
+            if not (self.use_custom_params_check.isChecked() and self.result_Ck_check.isChecked()):
+                self.result_Ck_input.setText(f"{ck_calc:.2f}")
+            
+            self.graph_data = {
+                "result": result, "ei": ei or ei_calc, "cc": cc or cc_calc, "ck": ck or ck_calc,
+                "e0": e0, "sigma_0": sigma_0, "kv0": kv0, "sigma_v": sigma_v
+            }
+            self.graph_viewer.set_graph_data(self.graph_data)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Calculation error: {e}")
+            return
 
     def reset(self):
         for input_widget in [
@@ -495,22 +349,43 @@ class HydroPage(QWidget):
             input_widget.setEnabled(False)
             input_widget.clear()
 
-        self.result_label.setText("Result:")
+        self.results_display.clear()
         self.graph_viewer.clear_graph()
         self.graph_data = None
 
     def _toggle_custom_params(self, state):
         is_checked = state == Qt.CheckState.Checked.value
         self.results_group.setVisible(is_checked)
-        self.result_EI_input.setEnabled(is_checked)
-        self.result_Cc_input.setEnabled(is_checked)
-        self.result_Ck_input.setEnabled(is_checked)
-        self.result_EI_type.setEnabled(is_checked)
-        self.result_EI_unit.setEnabled(is_checked)
-        self.result_Cc_type.setEnabled(is_checked)
-        self.result_Cc_unit.setEnabled(is_checked)
-        self.result_Ck_type.setEnabled(is_checked)
-        self.result_Ck_unit.setEnabled(is_checked)
+        
+        # When showing the custom results, ensure everything starts disabled
+        if is_checked:
+            # Reset and disable all checkboxes
+            self.result_EI_check.setChecked(False)
+            self.result_Cc_check.setChecked(False)
+            self.result_Ck_check.setChecked(False)
+            
+            # Ensure all inputs are disabled and styled accordingly
+            self.result_EI_input.setEnabled(False)
+            self.result_Cc_input.setEnabled(False)
+            self.result_Ck_input.setEnabled(False)
+            self.result_EI_unit.setEnabled(False)
+            self.result_Cc_unit.setEnabled(False)
+            self.result_Ck_unit.setEnabled(False)
+            
+            # Apply disabled styling
+            disabled_style = """
+                QLineEdit:disabled, QComboBox:disabled {
+                    background-color: #f0f0f0;
+                    color: #666666;
+                    border: 1px solid #cccccc;
+                }
+            """
+            self.result_EI_input.setStyleSheet(disabled_style)
+            self.result_Cc_input.setStyleSheet(disabled_style)
+            self.result_Ck_input.setStyleSheet(disabled_style)
+            self.result_EI_unit.setStyleSheet(disabled_style)
+            self.result_Cc_unit.setStyleSheet(disabled_style)
+            self.result_Ck_unit.setStyleSheet(disabled_style)
 
     def _set_value_column_width(self, width=120):
         self.type_sol_input.setMinimumWidth(width)
@@ -521,7 +396,7 @@ class HydroPage(QWidget):
         self.compress_input.setMaximumWidth(width)
         self.density_input.setMinimumWidth(width)
         self.density_input.setMaximumWidth(width)
-        # Pour les résultats optionnels
+        # For optional results
         if hasattr(self, 'result_EI_input'):
             self.result_EI_input.setMinimumWidth(width)
             self.result_EI_input.setMaximumWidth(width)
@@ -531,3 +406,59 @@ class HydroPage(QWidget):
         if hasattr(self, 'result_Ck_input'):
             self.result_Ck_input.setMinimumWidth(width)
             self.result_Ck_input.setMaximumWidth(width)
+
+    def _setup_custom_results(self):
+        # Create the custom results group
+        self.results_group = ModernGroupBox("Hydraulic Custom Parameters")
+        
+        # Create the results section
+        results_section = ModernResultsSection()
+        
+        # Add the parameters and store the checkboxes
+        self.result_EI_check = results_section.add_result(
+            "Initial thawed void ratio",
+            self.result_EI_unit,
+            self.result_EI_input
+        )
+        
+        self.result_Cc_check = results_section.add_result(
+            "Thawed soil compression index",
+            self.result_Cc_unit,
+            self.result_Cc_input
+        )
+        
+        self.result_Ck_check = results_section.add_result(
+            "Hydraulic conductivity index",
+            self.result_Ck_unit,
+            self.result_Ck_input
+        )
+        
+        # Set up the main layout
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(results_section)
+        self.results_group.setLayout(main_layout)
+        self.results_group.setVisible(False)
+
+        # Add to main layout right after the checkbox
+        main_layout = self.layout()
+        if main_layout:
+            left_widget = main_layout.itemAt(0).widget()
+            if left_widget:
+                left_layout = left_widget.layout()
+                if left_layout:
+                    # Find the checkbox widget
+                    for i in range(left_layout.count()):
+                        item = left_layout.itemAt(i)
+                        if item.widget() and isinstance(item.widget(), QWidget):
+                            if hasattr(item.widget(), 'layout'):
+                                checkbox_layout = item.widget().layout()
+                                if checkbox_layout and isinstance(checkbox_layout, QHBoxLayout):
+                                    for j in range(checkbox_layout.count()):
+                                        checkbox_item = checkbox_layout.itemAt(j)
+                                        if checkbox_item.widget() and isinstance(checkbox_item.widget(), QCheckBox):
+                                            # Insert the results group right after the checkbox's parent widget
+                                            left_layout.insertWidget(i + 1, self.results_group)
+                                            return
+                    
+                    # Fallback: insert before the button layout if checkbox not found
+                    left_layout.insertWidget(left_layout.count() - 1, self.results_group)

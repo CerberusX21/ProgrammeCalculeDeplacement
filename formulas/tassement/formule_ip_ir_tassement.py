@@ -29,11 +29,23 @@ class ClassificationSol:
     def classer(self) -> int:
         type_sol = self.type_sol
         self.is_near_limit = False
-        if type_sol == "clay%":
-            if not (0 < self.valeur_sol <= 100):
-                raise ValueError("The value of clay% must be between 0 and 100.")
-            seuil_ir = 0.01 * self.valeur_sol + 0.91
-            seuil_ip = 0.01 * self.valeur_sol + 0.9
+        if type_sol == "Clay percentage":
+            if not (0 <= self.valeur_sol <= 100):
+                raise ValueError("The value of Clay percentage must be between 0 and 100.")
+
+            # Calcul des limites pour Clay percentage
+            if self.valeur_sol <= 20:
+                limite_ip = 1.5
+                limite_ir = 2.0
+            elif self.valeur_sol <= 40:
+                limite_ip = 1.3
+                limite_ir = 1.7
+            else:
+                limite_ip = 1.1
+                limite_ir = 1.4
+
+            seuil_ir = limite_ir
+            seuil_ip = limite_ip
             diff = self.ei_star - seuil_ir
             # Zone de transition stricte
             if abs(self.ei_star - seuil_ir) <= self.marge:
@@ -46,10 +58,22 @@ class ClassificationSol:
                 # Exactement dans la zone de transition
                 self.is_near_limit = True
                 return 0 if diff >= 0 else 1
-        elif type_sol == "wL":
-            if not (0 < self.valeur_sol <= 100):
-                raise ValueError("The value of wL must be between 0 and 100.")
-            seuil = 0.01 * self.valeur_sol + 0.61
+        elif type_sol == "Liquid limit":
+            if not (0 <= self.valeur_sol <= 100):
+                raise ValueError("The value of Liquid limit must be between 0 and 100.")
+
+            # Calcul des limites pour Liquid limit
+            if self.valeur_sol <= 30:
+                limite_ip = 1.5
+                limite_ir = 2.0
+            elif self.valeur_sol <= 50:
+                limite_ip = 1.3
+                limite_ir = 1.7
+            else:
+                limite_ip = 1.1
+                limite_ir = 1.4
+
+            seuil = limite_ir
             diff = self.ei_star - seuil
             if abs(diff) <= self.marge:
                 self.is_near_limit = True
@@ -60,10 +84,22 @@ class ClassificationSol:
             else:
                 self.is_near_limit = True
                 return 0 if diff >= 0 else 1
-        elif type_sol == "d50ff":
+        elif type_sol == "Fine fraction median diameter":
             if not (0.001 <= self.valeur_sol <= 0.1):
-                raise ValueError("The value of d50ff must be between 0.001 and 0.1 mm.")
-            seuil = 0.17 * math.log(self.valeur_sol) + 1.98
+                raise ValueError("The value of Fine fraction median diameter must be between 0.001 and 0.1 mm.")
+
+            # Calcul des limites pour Fine fraction median diameter
+            if self.valeur_sol <= 0.002:
+                limite_ip = 1.1
+                limite_ir = 1.4
+            elif self.valeur_sol <= 0.01:
+                limite_ip = 1.3
+                limite_ir = 1.7
+            else:
+                limite_ip = 1.5
+                limite_ir = 2.0
+
+            seuil = limite_ir
             diff = self.ei_star - seuil
             if abs(diff) <= self.marge:
                 self.is_near_limit = True
@@ -75,4 +111,4 @@ class ClassificationSol:
                 self.is_near_limit = True
                 return 0 if diff >= 0 else 1
         else:
-            raise ValueError("Invalid soil type. Expected: clay%, wL or d50ff.")
+            raise ValueError("Invalid soil type. Expected: Clay percentage, Liquid limit or Fine fraction median diameter.")
