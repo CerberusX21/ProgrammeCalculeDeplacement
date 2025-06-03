@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QComboBox, QLineEdit,
-    QLabel, QPushButton, QMessageBox, QCheckBox, QGridLayout, QFrame, QSizePolicy, QHBoxLayout
+    QPushButton, QMessageBox, QCheckBox, QSizePolicy, QHBoxLayout
 )
 from PyQt6.QtCore import Qt
 from style import APP_STYLE
@@ -9,8 +9,12 @@ from formulas.hydraulique.FormulaClay import FormulaClay
 from formulas.hydraulique.FormulaLiquid import FormulaLiquid
 from formulas.hydraulique.FormulaD50ff import FormulaD50ff
 from pages.soil_parameter import assemble_hydro_layout, init_unit_mappings, init_input_limits
-from widgets.modern_widgets import ModernParameterWidget, ModernGroupBox, ModernResultsSection, ModernResultsDisplay
+from widgets.modern_widgets import ModernGroupBox, ModernResultsSection, ModernResultsDisplay
 
+"""
+Module Hydro – interface graphique de la section hydraulique.
+Contient les composants visuels et les fonctions de contrôle de l’interface utilisateur.
+"""
 
 class HydroPage(QWidget):
     def __init__(self):
@@ -332,7 +336,8 @@ class HydroPage(QWidget):
             self.density_input, self.result_EI_input, self.result_Cc_input, self.result_Ck_input
         ]:
             input_widget.clear()
-
+        
+        self.density_input.setText("2.67")
         for combo_box in [
             self.type_sol, self.type_sol_unit,
             self.pores_sol, self.pores_sol_unit,

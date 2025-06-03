@@ -1,11 +1,11 @@
 from PyQt6.QtWidgets import (
-    QWidget, QLineEdit, QComboBox, QLabel,
-    QVBoxLayout, QPushButton, QMessageBox, QFrame, QGridLayout, QSizePolicy, QHBoxLayout, QCheckBox
+    QWidget, QLineEdit, QComboBox,
+    QVBoxLayout, QPushButton, QMessageBox, QSizePolicy, QHBoxLayout, QCheckBox
 )
 from PyQt6.QtCore import Qt
 from pages.tassement.graph_viewer_tassement import GraphViewer
 from style import APP_STYLE
-from widgets.modern_widgets import ModernParameterWidget, ModernGroupBox, ModernResultsSection, ModernResultsDisplay
+from widgets.modern_widgets import ModernGroupBox, ModernResultsSection, ModernResultsDisplay
 
 from formulas.tassement.formule_ei_tassement import EI_Tassement
 from formulas.tassement.formule_ip_ir_tassement import ClassificationSol
@@ -59,6 +59,11 @@ class TassementPage(QWidget):
         self.calculate_button.clicked.connect(lambda: self.calculate(self.results_display))
         self.reset_button.clicked.connect(self.reset)
         
+        # Pour que le graphique se mette à jour quand on change la classification manuelle
+        self.result_type_sol_unit.currentIndexChanged.connect(
+            lambda: self.calculate(self.results_display, from_manual_classification=True)
+        )
+        
         # For syncing data between pages
         self.type_sol_input.textChanged.connect(self._sync_type_sol)
         self.pores_input.textChanged.connect(self._sync_pores)
@@ -70,6 +75,7 @@ class TassementPage(QWidget):
         self.result_Cc_input.textEdited.connect(self._on_custom_cc_edited)
         self.use_custom_params_check.stateChanged.connect(self._on_custom_check_changed)
         self.use_custom_params_check.stateChanged.connect(self._toggle_custom_params)
+        self.result_type_sol_unit.currentIndexChanged.connect(self._on_custom_type_edited)
 
     def _init_widgets(self):
         self.type_sol_input = self._create_line_edit("Value...")
@@ -283,7 +289,14 @@ class TassementPage(QWidget):
             return (min_val <= value <= max_val), min_val, max_val
         return True, None, None
 
-    def calculate(self, results_display):
+    def calculate(self, results_display, from_manual_classification=False):
+        if not all([
+            self.type_sol_input.text().strip(),
+            self.pores_input.text().strip(),
+            self.compress_input.text().strip(),
+            self.density_input.text().strip()
+        ]):
+            return
         try:
             data = {
                 'type_sol_valeur': float(self.type_sol_input.text()),
@@ -327,7 +340,11 @@ class TassementPage(QWidget):
             if code_etat == -1:
                 QMessageBox.warning(self, "Warning", "Soil classification unknown")
                 return
-            if classification.is_near_limit:
+            if (
+                classification.is_near_limit
+                and not (self.use_custom_params_check.isChecked() and self.result_type_sol_check.isChecked())
+                and not from_manual_classification
+            ):
                 QMessageBox.warning(self, "Warning",
                                     "The soil is close to the Ice-Rich/Ice-Poor limit. Classification may be sensitive to small changes in parameters.")
             detected_type = CLASSE_SOL[code_etat]
@@ -404,6 +421,8 @@ class TassementPage(QWidget):
             self.density_input, self.result_EI_input, self.result_Cc_input
         ]:
             input_widget.clear()
+        self.density_input.setText("2.67")
+        
         for combo_box in [
             self.type_sol, self.type_sol_unit,
             self.pores_sol, self.pores_sol_unit,
@@ -456,7 +475,7 @@ class TassementPage(QWidget):
             self.result_Ck_input.setMaximumWidth(width)
 
     def set_other_page(self, other_page):
-        """Set the reference to the other page for synchronization"""
+    
         self._other_page = other_page
 
     def _sync_type_sol(self, value):
