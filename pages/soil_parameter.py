@@ -220,8 +220,7 @@ def assemble_hydro_layout(self):
     results_layout_right.setContentsMargins(2, 4, 2, 4)
     results_layout_right.setSpacing(4)
 
-    results_layout_right.addWidget(self.results_display)
-    results_layout_right.addWidget(self.graph_viewer)
+    results_layout_right.addWidget(self.results_panel)
 
     # Make results panel expand to fill available space
     results_panel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)

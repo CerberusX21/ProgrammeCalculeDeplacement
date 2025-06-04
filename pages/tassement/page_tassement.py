@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 from pages.tassement.graph_viewer_tassement import GraphViewer
 from style import APP_STYLE
-from widgets.modern_widgets import ModernGroupBox, ModernResultsSection, ModernResultsDisplay
+from widgets.modern_widgets import ModernGroupBox, ModernResultsSection, ModernResultsDisplay, ModernResultsPanel
 
 from formulas.tassement.formule_ei_tassement import EI_Tassement
 from formulas.tassement.formule_ip_ir_tassement import ClassificationSol
@@ -16,7 +16,11 @@ from formulas.tassement.formule_calculer_tassement import CalculTassements
 from formulas.tassement.formule_indice_des_vides import CalculIndiceDesVides
 from formulas.tassement.formule_ip_ir_tassement import CLASSE_SOL
 from pages.soil_parameter import assemble_hydro_layout, init_unit_mappings, init_input_limits
-
+from PyQt6.QtWidgets import QFileDialog, QMessageBox
+from PyQt6.QtPrintSupport import QPrinter
+from PyQt6.QtGui import QPainter, QTextDocument
+import tempfile
+import os
 
 class TassementPage(QWidget):
     def __init__(self):
@@ -46,8 +50,17 @@ class TassementPage(QWidget):
         self.graph_viewer = GraphViewer()
         self.graph_viewer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         
+        # Create the results panel to group results and graphs
+        self.results_panel = ModernResultsPanel()
+        self.results_panel.add_widget(self.results_display)
+        self.results_panel.add_widget(self.graph_viewer)
+        
         self.calculate_button = QPushButton("Calculate")
         self.reset_button = QPushButton("Reset")
+
+        #Pour connecter le bouton export à la méthode d'exportation
+        self.results_panel.get_export_button().clicked.connect(self.export_to_pdf)
+        
         
         # Set up the main layout first
         assemble_hydro_layout(self)
@@ -545,3 +558,56 @@ class TassementPage(QWidget):
             """)
         else:
             combo.setStyleSheet("")
+
+    def export_to_pdf(self):
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Exporter en PDF", "", "PDF Files (*.pdf)"
+        )
+        if not file_path:
+            return
+
+        try:
+            # 1. Construire le HTML avec les entrées utilisateur
+            html = "<h2 style='color:#007bff;'>Entered Parameters</h2><ul>"
+            html += f"<li><b>{self.type_sol.currentText()}</b>: {self.type_sol_input.text()} {self.type_sol_unit.currentText()}</li>"
+            html += f"<li><b>{self.pores_sol.currentText()}</b>: {self.pores_input.text()} {self.pores_sol_unit.currentText()}</li>"
+            html += f"<li><b>{self.compress_sol.currentText()}</b>: {self.compress_input.text()} {self.compress_sol_unit.currentText()}</li>"
+            html += f"<li><b>Specific gravity of solids</b>: {self.density_input.text()}</li></ul>"
+
+            # 2. Ajouter les résultats
+            html += "<h2 style='color:#007bff;'>Results</h2><ul>"
+            for i in range(self.results_display.results_layout.count()):
+                widget = self.results_display.results_layout.itemAt(i).widget()
+                if widget:
+                    html += f"<li>{widget.text()}</li>"
+            html += "</ul>"
+
+            # 3. Exporter le graphique temporairement
+            temp_dir = tempfile.gettempdir()
+            graph_path = os.path.join(temp_dir, "graph_tassement_export.png")
+            self.graph_viewer.canvas.figure.savefig(graph_path, dpi=150)
+
+            # 4. Ajouter le graphique dans le HTML
+            html += "<h2 style='color:#007bff;'>Graph</h2>"
+            html += f"<img src='{graph_path}' width='600' />"
+
+            # 5. Créer et écrire le document PDF
+            doc = QTextDocument()
+            doc.setHtml(html)
+
+            printer = QPrinter()
+            printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
+            printer.setOutputFileName(file_path)
+
+            painter = QPainter()
+            if not painter.begin(printer):
+                QMessageBox.critical(self, "Error", "Unable to open the file for writing.")
+                return
+
+            doc.drawContents(painter)
+            painter.end()
+
+            QMessageBox.information(self, "Export PDF", "The file has been successfully exported.")
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")

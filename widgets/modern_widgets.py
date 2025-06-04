@@ -1,9 +1,11 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QFrame, QGridLayout, QSizePolicy, QGroupBox, QCheckBox
+    QFrame, QGridLayout, QSizePolicy, QGroupBox, QCheckBox, QPushButton
 )
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon
 from typing import List, Optional, Tuple
+import os
 
 class ModernGroupBox(QGroupBox):
     """A modern styled group box with optional icon."""
@@ -219,154 +221,183 @@ class ModernResultsSection(QWidget):
 class ModernResultsDisplay(QWidget):
     """A modern widget for displaying calculation results."""
     
-    STYLES = {
-        "frame": """
-            QFrame#resultsFrame {
-                background-color: transparent;
-                border: 1px solid #007bff;
-                border-radius: 6px;
-            }
-        """,
-        "label": """
-            QLabel {
-                color: #2c3e50;
-                font-size: 14px;
-                padding: 2px;
-                font-family: "Segoe UI", Arial, sans-serif;
-            }
-        """,
-        "value": """
-            QLabel[class="value"] {
-                color: #007bff;
-                font-weight: 600;
-                font-size: 15px;
-            }
-        """,
-        "unit": """
-            QLabel[class="unit"] {
-                color: #6c757d;
-                font-size: 13px;
-            }
-        """,
-        "header": """
-            QLabel[class="header"] {
-                color: #ffffff;
-                background-color: #007bff;
-                font-weight: 600;
-                padding: 3px 8px;
-                border-top-left-radius: 5px;
-                border-top-right-radius: 5px;
-                font-size: 12px;
-                min-height: 20px;
-                max-height: 20px;
-            }
-        """,
-        "separator": """
-            QFrame[class="separator"] {
-                background-color: #e9ecef;
-                min-height: 1px;
-                max-height: 1px;
-            }
-        """
-    }
-    
     def __init__(self):
         super().__init__()
         self._init_ui()
 
     def _init_ui(self) -> None:
         """Initialize the UI components."""
-        self.layout = QVBoxLayout(self)
-        self.layout.setSpacing(4)
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        # Main layout
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
         
-        self._create_frame()
-        self._create_header()
-        self._create_separator()
-        self._create_results_container()
+        # Results area avec coins arrondis
+        self.results_area = QWidget()
+        self.results_area.setStyleSheet("""
+            QWidget {
+                background-color: white;
+                border-radius: 12px;
+                border: none;
+            }
+        """)
         
-        self.current_row = 0
-
-    def _create_frame(self) -> None:
-        """Create the main frame for results."""
-        self.frame = QFrame()
-        self.frame.setObjectName("resultsFrame")
-        self.frame.setStyleSheet("\n".join(self.STYLES.values()))
+        # Layout for results
+        self.results_layout = QVBoxLayout(self.results_area)
+        self.results_layout.setContentsMargins(12, 12, 12, 12)
+        self.results_layout.setSpacing(6)
         
-        self.frame_layout = QVBoxLayout(self.frame)
-        self.frame_layout.setSpacing(2)
-        self.frame_layout.setContentsMargins(0, 0, 0, 12)
-        
-        self.layout.addWidget(self.frame)
+        layout.addWidget(self.results_area)
 
-    def _create_header(self) -> None:
-        """Create the header section."""
-        self.header = QLabel("Results")
-        self.header.setProperty("class", "header")
-        self.frame_layout.addWidget(self.header)
-
-    def _create_separator(self) -> None:
-        """Create the separator line."""
-        self.separator = QFrame()
-        self.separator.setProperty("class", "separator")
-        self.frame_layout.addWidget(self.separator)
-
-    def _create_results_container(self) -> None:
-        """Create the container for results."""
-        self.results_container = QWidget()
-        container_layout = QVBoxLayout(self.results_container)
-        container_layout.setContentsMargins(16, 4, 16, 0)
-        container_layout.setSpacing(0)
-        
-        self.grid = QGridLayout()
-        self.grid.setSpacing(0)
-        self.grid.setVerticalSpacing(1)
-        container_layout.addLayout(self.grid)
-        
-        self.frame_layout.addWidget(self.results_container)
-
-    def add_result(self, label: str, value: str, unit: str = "") -> None:
-        """Add a result row with optional label and unit."""
-        if not label:
-            self._add_simple_result(value)
-        else:
-            self._add_detailed_result(label, value, unit)
-        self.current_row += 1
-
-    def _add_simple_result(self, value: str) -> None:
-        """Add a simple text result centered in the row."""
-        text_widget = QLabel(value)
-        text_widget.setProperty("class", "value")
-        text_widget.setWordWrap(True)
-        text_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        text_widget.setContentsMargins(0, 0, 0, 0)
-        self.grid.addWidget(text_widget, self.current_row, 0, 1, 3)
-
-    def _add_detailed_result(self, label: str, value: str, unit: str) -> None:
-        """Add a detailed result row with label, value, and optional unit."""
-        # Label
-        label_widget = QLabel(f"{label}:")
-        label_widget.setContentsMargins(0, 0, 0, 0)
-        self.grid.addWidget(label_widget, self.current_row, 0)
-        
-        # Value
-        value_widget = QLabel(value)
-        value_widget.setProperty("class", "value")
-        value_widget.setContentsMargins(0, 0, 0, 0)
-        self.grid.addWidget(value_widget, self.current_row, 1)
-        
-        # Unit (if provided)
-        if unit:
-            unit_widget = QLabel(unit)
-            unit_widget.setProperty("class", "unit")
-            unit_widget.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-            unit_widget.setContentsMargins(0, 0, 0, 0)
-            self.grid.addWidget(unit_widget, self.current_row, 2)
-
-    def clear(self) -> None:
+    def clear(self):
         """Clear all results from the display."""
-        while self.grid.count():
-            item = self.grid.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-        self.current_row = 0
+        for i in reversed(range(self.results_layout.count())): 
+            widget = self.results_layout.itemAt(i).widget()
+            if widget:
+                widget.setParent(None)
+
+    def add_result(self, label, value):
+        """Add a single result to the display."""
+        result_label = QLabel(f"{label}: {value}")
+        result_label.setStyleSheet("""
+            QLabel {
+                color: #007bff;
+                font-size: 14px;
+                font-weight: 500;
+                padding: 6px 8px;
+                background-color: #f8f9fa;
+                border-radius: 6px;
+                border: 1px solid #e9ecef;
+            }
+        """)
+        self.results_layout.addWidget(result_label)
+
+class ModernExportButton(QPushButton):
+    """Un bouton d'export moderne avec style personnalisé et icône."""
+    
+    def __init__(self, text="Export", icon_path=None, parent=None):
+        super().__init__(text, parent)
+        self.setup_icon(icon_path)
+        self.setup_style()
+    
+    def setup_icon(self, icon_path):
+        """Configure l'icône du bouton."""
+        if icon_path:
+            from PyQt6.QtGui import QIcon
+            import os
+            
+            # Vérifier si le chemin existe
+            if os.path.exists(icon_path):
+                icon = QIcon(icon_path)
+                self.setIcon(icon)
+                # Ajuster la taille de l'icône
+                self.setIconSize(self.iconSize().scaled(16, 16, Qt.AspectRatioMode.KeepAspectRatio))
+        else:
+            # Chemin par défaut pour l'icône export
+            default_icon_path = r"C:\Users\Marika\Desktop\code stage été 2025\ProgrammeCalculeDeplacement\icons\export.png"
+            self.setup_icon(default_icon_path)
+    
+    def setup_style(self):
+        """Configure le style moderne du bouton."""
+        self.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(255, 255, 255, 0.2);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                border-radius: 8px;
+                color: white;
+                font-size: 16px;
+                font-weight: 500;
+                padding: 6px 12px;
+                padding-left: 8px;
+                min-width: 70px;
+                min-height: 28px;
+                text-align: left;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.3);
+                border: 1px solid rgba(255, 255, 255, 0.5);
+            }
+            QPushButton:pressed {
+                background-color: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+        """)
+
+class ModernResultsPanel(QWidget):
+    """A modern panel grouping results display and graphs with integrated export button."""
+    def __init__(self):
+        super().__init__()
+        
+        # Main layout
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+        
+        # Blue container panel avec coins arrondis
+        self.blue_panel = QWidget()
+        self.blue_panel.setStyleSheet("""
+            QWidget {
+                background-color: #007bff;
+                border-radius: 16px;
+                border: none;
+            }
+        """)
+        
+        # Layout for blue panel
+        panel_layout = QVBoxLayout(self.blue_panel)
+        panel_layout.setContentsMargins(16, 16, 16, 16)
+        panel_layout.setSpacing(16)
+        
+        # Header with title and export button
+        header_layout = QHBoxLayout()
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setSpacing(12)
+        
+        # Title
+        title = QLabel("Results")
+        title.setStyleSheet("""
+            QLabel {
+                color: white;
+                font-size: 18px;
+                font-weight: bold;
+                font-family: "Segoe UI";
+                margin: 0;
+                padding: 0;
+            }
+        """)
+        
+        # Export button
+        self.export_button = ModernExportButton("Export")
+        
+        # Alternative: Spécifier un chemin personnalisé pour l'icône
+        # self.export_button = ModernExportButton("Export", r"C:\Users\Marika\Desktop\code stage été 2025\ProgrammeCalculeDeplacement\icons\export.png")
+        
+        # Add to header layout
+        header_layout.addWidget(title)
+        header_layout.addStretch()  # Push export button to the right
+        header_layout.addWidget(self.export_button)
+        
+        panel_layout.addLayout(header_layout)
+        
+        # Content container
+        self.content_container = QWidget()
+        self.content_container.setStyleSheet("""
+            QWidget {
+                background-color: transparent;
+                border: none;
+            }
+        """)
+        self.content_layout = QVBoxLayout(self.content_container)
+        self.content_layout.setContentsMargins(0, 0, 0, 0)
+        self.content_layout.setSpacing(16)
+        panel_layout.addWidget(self.content_container)
+        
+        main_layout.addWidget(self.blue_panel)
+
+    def add_widget(self, widget):
+        """Add a widget to the content container."""
+        self.content_layout.addWidget(widget)
+    
+    def get_export_button(self):
+        """Return the export button for signal connections."""
+        return self.export_button

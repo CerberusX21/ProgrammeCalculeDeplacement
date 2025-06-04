@@ -31,12 +31,69 @@ class GraphViewer(QWidget):
         self._setup_checkboxes()
         self._setup_coord_label()
         self._connect_signals()
+        
+        # Style principal pour le widget GraphViewer - identique à l'hydraulique
+        self.setStyleSheet("""
+            GraphViewer {
+                background-color: #007bff;
+                border-radius: 16px;
+                padding: 8px;
+            }
+            
+            QLabel {
+                color: white;
+                font-family: "Segoe UI";
+                font-size: 14px;
+                font-weight: 500;
+            }
+
+            QLabel#coordLabel {
+                color: black;
+                background-color: #f8f9fa;
+                border: 1px solid #dee2e6;
+                border-radius: 4px;
+                font-family: "Segoe UI";
+                padding: 4px;
+                font-size: 12px;
+            }
+
+            QCheckBox {
+                color: white;
+                font-weight: 500;
+                font-size: 14px;
+                font-family: "Segoe UI";
+                spacing: 6px;
+            }
+
+            QCheckBox::indicator {
+                width: 18px;
+                height: 18px;
+                border-radius: 6px;
+                background-color: rgba(255, 255, 255, 0.3);
+                border: 2px solid rgba(255, 255, 255, 0.6);
+            }
+
+            QCheckBox::indicator:checked {
+                background-color: #ffffff;
+                border: 2px solid #ffffff;
+                image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEwIDNMNC41IDguNUwyIDYiIHN0cm9rZT0iIzAwN2JmZiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+);
+            }
+
+            QCheckBox::indicator:hover {
+                border: 2px solid rgba(255, 255, 255, 0.8);
+                background-color: rgba(255, 255, 255, 0.5);
+            }
+
+            QCheckBox::indicator:pressed {
+                background-color: rgba(255, 255, 255, 0.7);
+            }
+        """)
 
     def _init_ui(self) -> None:
         """Initialize the main UI layout."""
         self.layout = QVBoxLayout()
-        self.layout.setSpacing(4)
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(8)
+        self.layout.setContentsMargins(12, 12, 12, 12)
         self.setLayout(self.layout)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
@@ -45,38 +102,78 @@ class GraphViewer(QWidget):
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
         self.canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        
+        # Container pour le canvas avec coins arrondis - identique à l'hydraulique
+        self.canvas_container = QWidget()
+        self.canvas_container.setStyleSheet("""
+            QWidget {
+                background-color: white;
+                border-radius: 4px;
+                border: 1px solid #dee2e6;
+            }
+        """)
+        
+        canvas_layout = QVBoxLayout(self.canvas_container)
+        canvas_layout.setContentsMargins(1, 1, 1, 1)
+        canvas_layout.setSpacing(0)
+        canvas_layout.addWidget(self.canvas)
 
     def _setup_checkboxes(self) -> None:
         """Set up the graph selection checkboxes."""
         self.checkbox_stress = QCheckBox(self.GRAPH_CONFIG["checkbox_label"])
-        self.show_row = QHBoxLayout()
 
-        # Create header row with minimal height
+        # Create header row - identique à l'hydraulique
         header_widget = QWidget()
-        header_widget.setFixedHeight(30)
-        header_layout = QHBoxLayout(header_widget)
-        header_layout.setContentsMargins(4, 0, 4, 0)
-        header_layout.setSpacing(8)
+        header_widget.setFixedHeight(35)
+        header_widget.setStyleSheet("""
+            QWidget {
+                background-color: transparent;
+                border: none;
+            }
+        """)
         
-        header_layout.addWidget(QLabel("Show Graphs:"))
+        header_layout = QHBoxLayout(header_widget)
+        header_layout.setContentsMargins(8, 0, 8, 0)
+        header_layout.setSpacing(16)
+        
+        # Label "Show Graphs:"
+        show_label = QLabel("Show Graphs:")
+        show_label.setStyleSheet("""
+            QLabel {
+                color: white;
+                font-weight: 600;
+                font-size: 14px;
+            }
+        """)
+        
+        header_layout.addWidget(show_label)
+        
+        # Ajouter la checkbox (cochée par défaut)
         self.checkbox_stress.setChecked(True)
         header_layout.addWidget(self.checkbox_stress)
         header_layout.addStretch()
         
+        # Ajouter le header et le canvas au layout principal
         self.layout.addWidget(header_widget)
-        self.layout.addWidget(self.canvas)
+        self.layout.addWidget(self.canvas_container)
 
     def _setup_coord_label(self) -> None:
         """Set up the coordinate display label."""
-        self.coord_label = QLabel("Coordinates: x = --            y = --")
-        self.coord_label.setFixedHeight(25)
+        self.coord_label = QLabel("Coordinates: x =             y = ")
+        self.coord_label.setFixedHeight(28)
+        self.coord_label.setObjectName("coordLabel")
         self.coord_label.setStyleSheet("""
-            font-family: monospace;
-            padding: 4px;
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
+            QLabel#coordLabel {
+                color: black;
+                background-color: #f8f9fa;
+                border: 1px solid #dee2e6;
+                border-radius: 4px;
+                font-family: "Segoe UI";
+                padding: 4px;
+                font-size: 12px;
+            }
         """)
+        self.coord_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.layout.addWidget(self.coord_label)
 
     def _connect_signals(self) -> None:
@@ -225,7 +322,7 @@ class GraphViewer(QWidget):
 
     def _reset_coordinate_display(self) -> None:
         """Reset the coordinate display to default state."""
-        self.coord_label.setText("Coordinates: x = --            y = --")
+        self.coord_label.setText("Coordinates: x =             y = ")
         for dot in self.follow_dots:
             dot.set_visible(False)
         self.canvas.draw_idle()
@@ -258,15 +355,15 @@ class GraphViewer(QWidget):
             updated = True
 
         if not updated:
-            self.coord_label.setText("Coordinates: x = --            y = --")
+            self.coord_label.setText("Coordinates: x =             y = ")
         self.canvas.draw_idle()
 
     def clear_graph(self) -> None:
         """Clear all graph data and reset the display."""
         self.graph_data = None
         self.figure.clear()
-        self.canvas.draw_idle()
-        self.coord_label.setText("Coordinates: x = --            y = --")
-        self.follow_dots = []
-        self.lines = []
-        self.axes = []
+        self.canvas.draw()
+        self.lines.clear()
+        self.axes.clear()
+        self.follow_dots.clear()
+        self.coord_label.setText("Coordinates: x =             y = ")
