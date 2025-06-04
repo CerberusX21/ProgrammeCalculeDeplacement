@@ -258,7 +258,7 @@ class ModernResultsDisplay(QWidget):
 
     def add_result(self, label, value):
         """Add a single result to the display."""
-        result_label = QLabel(f"{label}: {value}")
+        result_label = QLabel(f"{label} {value}")
         result_label.setStyleSheet("""
             QLabel {
                 color: #007bff;
@@ -266,8 +266,8 @@ class ModernResultsDisplay(QWidget):
                 font-weight: 500;
                 padding: 6px 8px;
                 background-color: #f8f9fa;
-                border-radius: 6px;
-                border: 1px solid #e9ecef;
+                border: none;
+                
             }
         """)
         self.results_layout.addWidget(result_label)
@@ -294,7 +294,7 @@ class ModernExportButton(QPushButton):
                 self.setIconSize(self.iconSize().scaled(16, 16, Qt.AspectRatioMode.KeepAspectRatio))
         else:
             # Chemin par défaut pour l'icône export
-            default_icon_path = r"C:\Users\Marika\Desktop\code stage été 2025\ProgrammeCalculeDeplacement\icons\export.png"
+            default_icon_path = r"C:\Users\Marika\Desktop\code stage été 2025\ProgrammeCalculeDeplacement\icons\export.ico"
             self.setup_icon(default_icon_path)
     
     def setup_style(self):
@@ -368,9 +368,7 @@ class ModernResultsPanel(QWidget):
         
         # Export button
         self.export_button = ModernExportButton("Export")
-        
-        # Alternative: Spécifier un chemin personnalisé pour l'icône
-        # self.export_button = ModernExportButton("Export", r"C:\Users\Marika\Desktop\code stage été 2025\ProgrammeCalculeDeplacement\icons\export.png")
+   
         
         # Add to header layout
         header_layout.addWidget(title)
