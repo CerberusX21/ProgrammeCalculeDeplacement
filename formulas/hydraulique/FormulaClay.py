@@ -1,6 +1,28 @@
 import math
 
-class FormulaClay:
+"""
+    Classe pour calculer les paramètres géotechniques des sols argileux.
+    
+    Cette classe implémente les formules de calcul pour la perméabilité,
+    la compressibilité et autres paramètres des sols argileux gelés/dégelés.
+    
+    Attributes:
+        type_sol (float): Type de sol
+        pores_sol (float): Porosité du sol
+        compress_sol (float): Compression du sol
+        density_sol (float): Densité du sol
+        sigma_v (float): Contrainte verticale
+        E0 (float): Indice des vides initial
+        Ei (float): Indice des vides
+        sigma0 (float): Contrainte de référence
+        kv0 (float): Perméabilité verticale
+        Cc (float): Indice de compression
+        Ck (float): Indice de perméabilité
+        result (float): Résultat du calcul
+    """
+class FormulaClay:    
+
+    
     def __init__(self):
         self.type_sol = None
         self.pores_sol = None
