@@ -29,7 +29,7 @@ class ClassificationSol:
     def classer(self) -> int:
         type_sol = self.type_sol
         self.is_near_limit = False
-        if type_sol == "Clay percentage":
+        if type_sol == "Clay content":
             if not (0 < self.valeur_sol <= 100):
                 raise ValueError("The value of clay% must be between 0 and 100.")
             seuil_ir = 0.01 * self.valeur_sol + 0.91

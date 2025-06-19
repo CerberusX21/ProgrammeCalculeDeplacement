@@ -21,7 +21,7 @@ class CalculSigma0:
             else:  # Ice-Poor
                 sigma0 = 0.0033 * self.valeur + 0.037
 
-        elif self.type_sol == "Clay percentage":
+        elif self.type_sol == "Clay content":
             if self.etat_sol == 0:  # Ice-Rich
                 sigma0 = 0.0081 * self.valeur + 0.019
             else:  # Ice-Poor
@@ -36,7 +36,7 @@ class CalculSigma0:
                 sigma0 = -0.007 * math.log10(self.valeur) + 0.0075
 
         else:
-            raise ValueError("Soil type is invalid. Expected: Liquid limit, Clay percentage or Fine fraction median diameter.")
+            raise ValueError("Soil type is invalid. Expected: Liquid limit, Clay content or Fine fraction median diameter.")
 
         # --- Application des seuils selon l'état du sol ---
         if self.etat_sol == 1:  # Ice-Poor

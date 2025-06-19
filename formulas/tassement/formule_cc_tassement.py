@@ -24,7 +24,7 @@ class CalculCcStar:
         elif self.etat == 0:
             if self.type == "Liquid limit":
                 cc_star = (0.0081 * self.valeur - 0.019) * log_ei + (0.0033 * self.valeur + 0.037)
-            elif self.type == "Clay percentage":
+            elif self.type == "Clay content":
                 cc_star = (0.0051 * self.valeur - 0.18) * log_ei + (0.0015 * self.valeur + 0.096)
             elif self.type == "Fine fraction median diameter":
                 if self.valeur <= 0:

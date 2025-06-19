@@ -99,12 +99,12 @@ class TassementPage(QWidget):
 
         self.type_sol = QComboBox()
         self.type_sol.setProperty("type", "type")
-        self.type_sol.addItems(["Clay percentage", "Liquid limit", "Fine fraction median diameter"])
+        self.type_sol.addItems(["Clay content", "Liquid limit", "Fine fraction median diameter"])
         self.type_sol_unit = QComboBox()
 
         self.pores_sol = QComboBox()
         self.pores_sol.setProperty("type", "type")
-        self.pores_sol.addItems(["Thawed soil initial water content", "Frozen buld density", "Frozen void ratio"])
+        self.pores_sol.addItems(["Initial water content", "Frozen buld density", "Frozen void ratio"])
         self.pores_sol_unit = QComboBox()
 
         self.compress_sol = QComboBox()
@@ -415,7 +415,7 @@ class TassementPage(QWidget):
             # 5. Display results exactly as before
             self.results_display.clear()
             self.results_display.add_result("", f"Total settlement S = {s_total:.2f} %")
-            self.results_display.add_result("", f"Settlement S1 (ice melt) = {s1:.2f} %")
+            self.results_display.add_result("", f"Settlement S1 (Drainage of excess melt water) = {s1:.2f} %")
             self.results_display.add_result("", f"Settlement S2 (compression) = {s2:.2f} %")
 
             # 6. Mise à jour du graphique

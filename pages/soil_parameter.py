@@ -86,8 +86,8 @@ QLineEdit[custom="true"] {
 def init_unit_mappings(self):
     """Initialize the unit mappings that are common to both pages"""
     self.type_unit_mapping = {
-        self.type_sol: {"Clay percentage": ["%"], "Liquid limit": ["%"], "Fine fraction median diameter": ["mm"]},
-        self.pores_sol: {"Thawed soil initial water content": ["kg/kg"], "Frozen buld density": ["kg/m³", "g/cm³"], "Frozen void ratio": ["Direct"]},
+        self.type_sol: {"Clay content": ["%"], "Liquid limit": ["%"], "Fine fraction median diameter": ["mm"]},
+        self.pores_sol: {"Initial water content": ["kg/kg"], "Frozen buld density": ["kg/m³", "g/cm³"], "Frozen void ratio": ["Direct"]},
         self.compress_sol: {"Effective vertical stress": ["kPa"]},
         self.density_sol: {"Specific gravity of solids": ["-"]}
     }

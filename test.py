@@ -14,8 +14,8 @@ class TestEITassement(unittest.TestCase):
     """Tests pour la classe EI_Tassement"""
     
     def test_calcul_avec_w(self):
-        # Test avec teneur en eau Thawed soil initial water content
-        ei = EI_Tassement(valeur_pore=50, Specific_gravity_of_solids=2.7, type_pore="Thawed soil initial water content")
+        # Test avec teneur en eau Initial water content
+        ei = EI_Tassement(valeur_pore=50, Specific_gravity_of_solids=2.7, type_pore="Initial water content")
         result = ei.calculer()
         expected = 0.01 * 50 * 2.7  # 1.35
         self.assertAlmostEqual(result, expected, places=6)

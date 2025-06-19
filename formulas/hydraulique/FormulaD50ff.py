@@ -26,7 +26,7 @@ class FormulaD50ff:
 
         try:
             if self.ei is None:
-                if pore_style == "Thawed soil initial water content":
+                if pore_style == "Initial water content":
                     self.formula13a()
                 elif pore_style == "Frozen buld density":
                     self.formula13b()
