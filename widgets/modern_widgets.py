@@ -258,7 +258,7 @@ class ModernResultsDisplay(QWidget):
 
     def add_result(self, label, value):
         """Add a single result to the display."""
-        result_label = QLabel(f"{label}: {value}")
+        result_label = QLabel(f"{label} {value}")
         result_label.setStyleSheet("""
             QLabel {
                 color: #007bff;

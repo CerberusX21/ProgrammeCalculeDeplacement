@@ -20,7 +20,8 @@ class GraphViewer(QWidget):
             "title": "Hydraulic Conductivity",
             "xlabel": "Hydraulic Conductivity (k) [m/s]",
             "ylabel": "Void Ratio (e)",
-            "checkbox_label": "Hydraulic Conductivity"
+            "checkbox_label": "Hydraulic Conductivity",
+            "xscale": "log"
         }
     }
 
@@ -238,11 +239,46 @@ class GraphViewer(QWidget):
         e0 = self.graph_data["e0"]
         cc = self.graph_data["cc"]
 
-        e = e0 - cc * math.log10(sigma_v/sigma_0)
-        line, = ax.plot([sigma_0, sigma_v], [e0, e], 'k-', marker='o')
+        e = e0 - cc * math.log10(sigma_v / sigma_0)
+
+        x_points = np.array([sigma_0, sigma_v])
+        y_points = np.array([e0, e])
+
+        # Plot extended line
+        dx = x_points[1] - x_points[0]
+        dy = y_points[1] - y_points[0]
+        
+        if abs(dx) > 1e-9:
+            # Extend line by a large factor
+            factor = 50.0
+            x_extended = [x_points[0] - dx * factor, x_points[1] + dx * factor]
+            y_extended = [y_points[0] - dy * factor, y_points[1] + dy * factor]
+            ax.plot(x_extended, y_extended, 'k-')
+        else:  # Vertical line
+            y_range = abs(y_points[1] - y_points[0]) if abs(y_points[1] - y_points[0]) > 1e-9 else 1
+            factor = 50.0
+            y_extended = [y_points[0] - y_range * factor, y_points[1] + y_range * factor]
+            ax.plot([x_points[0], x_points[0]], y_extended, 'k-')
+        
+        # Plot markers at original points on top
+        ax.plot(x_points, y_points, 'o', color='red', markersize=6)
+
+        # Add coordinate labels
+        for x, y in zip(x_points, y_points):
+            ax.text(x, y, f'  ({x:.2f}, {y:.3f})', fontsize=9, verticalalignment='bottom')
+
+        # Create an invisible line with original data for mouse tracking
+        line, = ax.plot(x_points, y_points, visible=False)
 
         self._configure_axis(ax, config)
         self._add_graph_elements(ax, line)
+
+        # Set limits to focus on the original points
+        x_margin = abs(dx) * 0.15 if abs(dx) > 1e-9 else 1
+        ax.set_xlim(min(x_points) - x_margin, max(x_points) + x_margin)
+        
+        y_margin = abs(dy) * 0.15 if abs(dy) > 1e-9 else 1
+        ax.set_ylim(min(y_points) - y_margin, max(y_points) + y_margin)
 
     def _plot_conductivity_graph(self, pos: int, cols: int) -> None:
         """Plot the hydraulic conductivity graph."""
@@ -254,11 +290,55 @@ class GraphViewer(QWidget):
         yf = self.graph_data["e0"]
         ck = self.graph_data["ck"]
 
-        yi = yf + ck * math.log10(xi/xf)
-        line, = ax.plot([xi, xf], [yi, yf], 'k-', marker='o')
+        yi = yf + ck * math.log10(xi / xf)
+
+        x_points = np.array([xi, xf])
+        y_points = np.array([yi, yf])
+
+        # Plot extended line for log scale
+        if np.any(x_points <= 0):
+            # Fallback to original plot if log scale is not possible
+            line, = ax.plot(x_points, y_points, 'k-', marker='o')
+            self._configure_axis(ax, config)
+            self._add_graph_elements(ax, line)
+            return
+
+        log_x_points = np.log10(x_points)
+        dx_log = log_x_points[1] - log_x_points[0]
+        dy = y_points[1] - y_points[0]
+
+        if abs(dx_log) > 1e-9:
+            factor = 50.0
+            log_x_extended = [log_x_points[0] - dx_log * factor, log_x_points[1] + dx_log * factor]
+            x_extended = 10**np.array(log_x_extended)
+            y_extended = [y_points[0] - dy * factor, y_points[1] + dy * factor]
+            ax.plot(x_extended, y_extended, 'k-')
+        else: # vertical line
+            y_range = abs(y_points[1] - y_points[0]) if abs(y_points[1] - y_points[0]) > 1e-9 else 1
+            factor = 50.0
+            y_extended = [y_points[0] - y_range * factor, y_points[1] + y_range * factor]
+            ax.plot([x_points[0], x_points[0]], y_extended, 'k-')
+
+        # Plot markers at original points on top
+        ax.plot(x_points, y_points, 'o', color='red', markersize=6)
+
+        # Add coordinate labels
+        for x, y in zip(x_points, y_points):
+            ax.text(x, y, f'  ({x:.2e}, {y:.3f})', fontsize=9, verticalalignment='bottom')
+
+        # Create an invisible line with original data for mouse tracking
+        line, = ax.plot(x_points, y_points, visible=False)
 
         self._configure_axis(ax, config)
         self._add_graph_elements(ax, line)
+
+        # Set limits for log scale
+        if abs(dx_log) > 1e-9:
+            log_x_margin = abs(dx_log) * 0.15
+            ax.set_xlim(10**(min(log_x_points) - log_x_margin), 10**(max(log_x_points) + log_x_margin))
+        
+        y_margin = abs(dy) * 0.15 if abs(dy) > 1e-9 else 1
+        ax.set_ylim(min(y_points) - y_margin, max(y_points) + y_margin)
 
     def _configure_axis(self, ax: Any, config: Dict[str, str]) -> None:
         """Configure the axis with titles and grid."""
@@ -266,6 +346,8 @@ class GraphViewer(QWidget):
         ax.set_xlabel(config["xlabel"], labelpad=8)
         ax.set_ylabel(config["ylabel"], labelpad=8)
         ax.grid(True, alpha=0.3)
+        if config.get("xscale") == "log":
+            ax.set_xscale("log")
 
     def _add_graph_elements(self, ax: Any, line: Any) -> None:
         """Add the line and follow dot to the tracking lists."""

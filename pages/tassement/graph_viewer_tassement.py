@@ -273,7 +273,7 @@ class GraphViewer(QWidget):
         """Add settlement-specific points and annotations to the graph."""
         # Add initial point
         ax.plot(sigma0, e0_star, 'bo', markersize=8)
-        ax.text(sigma0, e0_star + 0.05, f"(σ₀={sigma0:.1f}, e₀={e0_star:.3f})", 
+        ax.text(sigma0, e0_star + 0.05, f"(σ₀={sigma0:.1f}, e*₀={e0_star:.3f})", 
                 color='black', fontweight='bold', ha='center')
 
         # Add ei point if in settlement mode
@@ -289,14 +289,14 @@ class GraphViewer(QWidget):
         if abs(self.ei_value - e0_star) < 0.001:
             # ei ≈ e0: point on the curve at sigma0
             ax.plot(sigma0, self.ei_value, 'go', markersize=8)
-            ax.text(sigma0 * 1.2, self.ei_value, f"eᵢ={self.ei_value:.3f}", 
+            ax.text(sigma0 * 1.2, self.ei_value, f"e*ᵢ={self.ei_value:.3f}", 
                     color='black', fontweight='bold', ha='left')
         else:
             # ei ≠ e0: dotted vertical line from e0 to ei
             ax.plot([sigma0, sigma0], [e0_star, self.ei_value], 
                    color='black', linestyle=':', linewidth=2)
             ax.plot(sigma0, self.ei_value, 'go', markersize=8)
-            ax.text(sigma0 * 1.2, self.ei_value, f"eᵢ={self.ei_value:.3f}", 
+            ax.text(sigma0 * 1.2, self.ei_value, f"e*ᵢ={self.ei_value:.3f}", 
                     color='black', fontweight='bold', ha='left')
 
     def _add_final_point(self, ax: Any, sigma0: float, sigma_v: float, 
