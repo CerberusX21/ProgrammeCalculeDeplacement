@@ -42,6 +42,7 @@ class HydroPage(QWidget):
         # Create the results display widget
         self.results_display = ModernResultsDisplay()
         self.results_display.setFixedHeight(150)
+        self.results_display.setMaximumHeight(650)
         
         # Create the results panel to group results and graphs
         self.results_panel = ModernResultsPanel()
@@ -75,7 +76,7 @@ class HydroPage(QWidget):
         main_widget = QWidget()
         main_widget.setLayout(old_layout)
         outer_layout = QVBoxLayout()
-        label = QLabel("Thawed soil hydraulic conductivity as proposed by Picard et al. (2026)")
+        label = QLabel("Thawed soil hydraulic conductivity as proposed by Picard and al. (2026)")
         label.setObjectName("parameterLabel")
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         outer_layout.addWidget(label)
@@ -328,6 +329,14 @@ class HydroPage(QWidget):
             
             # Show result exactly as before
             self.results_display.add_result("", f"kv = {result:.2e}")
+            # Show intermediate results
+            self.results_display.add_result("", f"Ei = {ei or ei_calc:.3f}")
+            self.results_display.add_result("", f"Cc = {cc or cc_calc:.3f}")
+            self.results_display.add_result("", f"Ck = {ck or ck_calc:.3f}")
+            self.results_display.add_result("", f"E0 = {e0:.3f}")
+            self.results_display.add_result("", f"sigma0 = {sigma_0:.3f}")
+            self.results_display.add_result("", f"kv0 = {kv0:.3e}")
+            self.results_display.add_result("", f"sigma_v = {sigma_v:.3f}")
             
             # Only update unchecked parameter displays
             if not (self.use_custom_params_check.isChecked() and self.result_EI_check.isChecked()):

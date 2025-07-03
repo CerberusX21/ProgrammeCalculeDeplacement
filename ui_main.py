@@ -16,7 +16,7 @@ class Window(QWidget):
         self.hydro_page = HydroPage()
         self.tassement_page = TassementPage()
         self.tabs.addTab(self.hydro_page, "Hydraulic Conductivity")
-        self.tabs.addTab(self.tassement_page, "Settlement")
+        self.tabs.addTab(self.tassement_page, "Thaw Consoldiation")
 
         # Synchronisation entre les deux pages pour avoir les valeurs automatiquement 
         self.hydro_page.set_other_page(self.tassement_page)

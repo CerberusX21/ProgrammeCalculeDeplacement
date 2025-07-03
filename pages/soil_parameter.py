@@ -126,10 +126,16 @@ def assemble_hydro_layout(self):
     parameters_widget.setFixedWidth(450)  # Fixed width that accommodates all content
 
     # Parameters Group (without title)
-    soil_group = ModernGroupBox("")
+    soil_group = ModernGroupBox("Soil Parameters")
     soil_layout = QVBoxLayout()
     soil_layout.setSpacing(12)
     soil_layout.setContentsMargins(4, 8, 4, 8)
+
+    # Add a section label above the parameters
+    section_label = QLabel("Input Parameters as proposed by Dumais and Konrad (2023)")
+    section_label.setObjectName("parameterLabel")
+    section_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    soil_layout.addWidget(section_label)
 
     # Helper function to create parameter section with label above widgets
     def add_parameter_section(layout, label, widget_type, widget_unit, widget_value):

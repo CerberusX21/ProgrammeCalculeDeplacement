@@ -43,7 +43,8 @@ class TassementPage(QWidget):
         
         # Create the results display widget
         self.results_display = ModernResultsDisplay()
-        self.results_display.setFixedHeight(150)  # Increased height for 3 lines of results
+        self.results_display.setFixedHeight(150)
+        self.results_display.setMaximumHeight(650)
         
         # Create the results panel to group results and graphs
         self.results_panel = ModernResultsPanel()
@@ -89,7 +90,7 @@ class TassementPage(QWidget):
         main_widget = QWidget()
         main_widget.setLayout(old_layout)
         outer_layout = QVBoxLayout()
-        label = QLabel("Thaw consolidation as proposed by Nazeri et al. 2026")
+        label = QLabel("Thaw consolidation as proposed by Nazeri and al. 2026")
         label.setObjectName("parameterLabel")
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         outer_layout.addWidget(label)
@@ -424,6 +425,12 @@ class TassementPage(QWidget):
             self.results_display.add_result("", f"Total settlement S = {s_total:.2f} %")
             self.results_display.add_result("", f"Settlement S1 (Drainage of excess melt water) = {s1:.2f} %")
             self.results_display.add_result("", f"Settlement S2 (compression) = {s2:.2f} %")
+            # Show intermediate results
+            self.results_display.add_result("", f"ei* = {ei_star:.3f}")
+            self.results_display.add_result("", f"Cc* = {cc_star:.3f}")
+            self.results_display.add_result("", f"E0* = {e0_star:.3f}")
+            self.results_display.add_result("", f"sigma0 = {sigma0:.3f}")
+            self.results_display.add_result("", f"Indice des vides = {indice_vides:.3f}")
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Calcul error: {e}")
