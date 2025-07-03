@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QWidget, QLineEdit, QComboBox,
-    QVBoxLayout, QPushButton, QMessageBox, QSizePolicy, QHBoxLayout, QCheckBox
+    QVBoxLayout, QPushButton, QMessageBox, QSizePolicy, QHBoxLayout, QCheckBox, QLabel
 )
 from PyQt6.QtCore import Qt
 from pages.tassement.graph_viewer_tassement import GraphViewer
@@ -89,6 +89,18 @@ class TassementPage(QWidget):
         self.use_custom_params_check.stateChanged.connect(self._on_custom_check_changed)
         self.use_custom_params_check.stateChanged.connect(self._toggle_custom_params)
         self.result_type_sol_unit.currentIndexChanged.connect(self._on_custom_type_edited)
+
+        # --- Add QLabel above the main layout (robust approach) ---
+        old_layout = self.layout()
+        main_widget = QWidget()
+        main_widget.setLayout(old_layout)
+        outer_layout = QVBoxLayout()
+        label = QLabel("Settlement Calculation")
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        outer_layout.addWidget(label)
+        outer_layout.addWidget(main_widget)
+        QWidget.setLayout(self, outer_layout)
+        # --- End QLabel addition ---
 
     def _init_widgets(self):
         self.type_sol_input = self._create_line_edit("Value...")
