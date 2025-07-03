@@ -151,9 +151,8 @@ APP_STYLE = """
         background-color: rgba(13, 110, 253, 0.1);
     }
 
-    #parameterLabel {
-        background-color: #0d6efd;
-        color: white;
+    QLabel#parameterLabel {
+        color: #0d6efd;
         font-size: 25px;
         font-family: "Segoe UI";
         padding: 8px 12px;

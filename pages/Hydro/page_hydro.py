@@ -4,7 +4,6 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 from style import APP_STYLE
-from pages.Hydro.graph_viewer_hydro import GraphViewer
 from widgets.modern_widgets import ModernGroupBox, ModernResultsSection, ModernResultsDisplay, ModernResultsPanel  # Add ModernResultsPanel here
 from formulas.hydraulique.FormulaClay import FormulaClay
 from formulas.hydraulique.FormulaLiquid import FormulaLiquid
@@ -44,17 +43,9 @@ class HydroPage(QWidget):
         self.results_display = ModernResultsDisplay()
         self.results_display.setFixedHeight(150)
         
-        # Create the graph viewer
-        self.graph_viewer = GraphViewer()
-        self.graph_viewer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        
         # Create the results panel to group results and graphs
         self.results_panel = ModernResultsPanel()
         self.results_panel.add_widget(self.results_display)
-        self.results_panel.add_widget(self.graph_viewer)
-
-        #Pour connecter le bouton export à la méthode d'exportation
-        self.results_panel.get_export_button().clicked.connect(self.export_to_pdf)
         
         self.calculate_button = QPushButton("Calculate")
         self.reset_button = QPushButton("Reset")
@@ -84,7 +75,8 @@ class HydroPage(QWidget):
         main_widget = QWidget()
         main_widget.setLayout(old_layout)
         outer_layout = QVBoxLayout()
-        label = QLabel("Hydraulic Conductivity Calculation")
+        label = QLabel("Thawed soil hydraulic conductivity as proposed by Picard et al. (2026)")
+        label.setObjectName("parameterLabel")
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         outer_layout.addWidget(label)
         outer_layout.addWidget(main_widget)
@@ -345,11 +337,6 @@ class HydroPage(QWidget):
             if not (self.use_custom_params_check.isChecked() and self.result_Ck_check.isChecked()):
                 self.result_Ck_input.setText(f"{ck_calc:.2f}")
             
-            self.graph_data = {
-                "result": result, "ei": ei or ei_calc, "cc": cc or cc_calc, "ck": ck or ck_calc,
-                "e0": e0, "sigma_0": sigma_0, "kv0": kv0, "sigma_v": sigma_v
-            }
-            self.graph_viewer.set_graph_data(self.graph_data)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Calculation error: {e}")
             return
@@ -379,8 +366,6 @@ class HydroPage(QWidget):
             input_widget.clear()
 
         self.results_display.clear()
-        self.graph_viewer.clear_graph()
-        self.graph_data = None
 
     def _toggle_custom_params(self, state):
         is_checked = state == Qt.CheckState.Checked.value
@@ -491,56 +476,3 @@ class HydroPage(QWidget):
                     
                     # Fallback: insert before the button layout if checkbox not found
                     left_layout.insertWidget(left_layout.count() - 1, self.results_group)
-    
-    
-    def export_to_pdf(self):
-        file_path, _ = QFileDialog.getSaveFileName(
-            self, "Exporter en PDF", "", "PDF Files (*.pdf)"
-        )
-        if not file_path:
-            return
-
-        try:
-            # 1. Construire le HTML avec les paramètres utilisateur
-            html = "<h2 style='color:#007bff;'>Entered Parameters</h2><ul>"
-            html += f"<li><b>{self.type_sol.currentText()}</b>: {self.type_sol_input.text()} {self.type_sol_unit.currentText()}</li>"
-            html += f"<li><b>{self.pores_sol.currentText()}</b>: {self.pores_input.text()} {self.pores_sol_unit.currentText()}</li>"
-            html += f"<li><b>{self.compress_sol.currentText()}</b>: {self.compress_input.text()} {self.compress_sol_unit.currentText()}</li>"
-            html += f"<li><b>Specific gravity of solids</b>: {self.density_input.text()}</li></ul>"
-
-            html += "<h2 style='color:#007bff;'>Results</h2><ul>"
-            for i in range(self.results_display.results_layout.count()):
-                widget = self.results_display.results_layout.itemAt(i).widget()
-                if widget:
-                    html += f"<li>{widget.text()}</li>"
-            html += "</ul>"
-
-            # 2. Sauvegarder temporairement le graphique en PNG
-            temp_dir = tempfile.gettempdir()
-            graph_path = os.path.join(temp_dir, "graph_export.png")
-            self.graph_viewer.canvas.figure.savefig(graph_path, dpi=150)
-
-            # Ajouter le graphique en HTML (en tant qu'image locale)
-            html += "<h2 style='color:#007bff;'>Graph</h2>"
-            html += f"<img src='{graph_path}' width='600' />"
-
-            # 3. Créer le document PDF
-            doc = QTextDocument()
-            doc.setHtml(html)
-
-            printer = QPrinter()
-            printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
-            printer.setOutputFileName(file_path)
-
-            painter = QPainter()
-            if not painter.begin(printer):
-                QMessageBox.critical(self, "Error", "Unable to open the file for writing.")
-                return
-
-            doc.drawContents(painter)
-            painter.end()
-
-            QMessageBox.information(self, "Export PDF", "The file has been successfully exported.")
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")

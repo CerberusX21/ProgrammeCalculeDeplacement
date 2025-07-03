@@ -3,7 +3,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout, QPushButton, QMessageBox, QSizePolicy, QHBoxLayout, QCheckBox, QLabel
 )
 from PyQt6.QtCore import Qt
-from pages.tassement.graph_viewer_tassement import GraphViewer
 from style import APP_STYLE
 from widgets.modern_widgets import ModernGroupBox, ModernResultsSection, ModernResultsDisplay, ModernResultsPanel
 
@@ -46,14 +45,9 @@ class TassementPage(QWidget):
         self.results_display = ModernResultsDisplay()
         self.results_display.setFixedHeight(150)  # Increased height for 3 lines of results
         
-        # Create the graph viewer
-        self.graph_viewer = GraphViewer()
-        self.graph_viewer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        
         # Create the results panel to group results and graphs
         self.results_panel = ModernResultsPanel()
         self.results_panel.add_widget(self.results_display)
-        self.results_panel.add_widget(self.graph_viewer)
         
         self.calculate_button = QPushButton("Calculate")
         self.reset_button = QPushButton("Reset")
@@ -95,7 +89,8 @@ class TassementPage(QWidget):
         main_widget = QWidget()
         main_widget.setLayout(old_layout)
         outer_layout = QVBoxLayout()
-        label = QLabel("Settlement Calculation")
+        label = QLabel("Thaw consolidation as proposed by Nazeri et al. 2026")
+        label.setObjectName("parameterLabel")
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         outer_layout.addWidget(label)
         outer_layout.addWidget(main_widget)
@@ -430,13 +425,6 @@ class TassementPage(QWidget):
             self.results_display.add_result("", f"Settlement S1 (Drainage of excess melt water) = {s1:.2f} %")
             self.results_display.add_result("", f"Settlement S2 (compression) = {s2:.2f} %")
 
-            # 6. Mise à jour du graphique
-            self.graph_viewer.set_is_tassement(True)
-            self.graph_viewer.set_ei_value(ei_star)
-            self.graph_viewer.set_graph_data(self.register(
-                s_total, ei_star, cc_star, e0_star, sigma0, indice_vides, s1, s2
-            ))
-
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Calcul error: {e}")
 
@@ -460,7 +448,6 @@ class TassementPage(QWidget):
         self.result_Cc_input.setEnabled(False)
         self.result_type_sol_unit.setCurrentIndex(-1)
         self.results_display.clear()
-        self.graph_viewer.clear_graph()
 
     def register(self, s_total, ei_star, cc_star, e0_star, sigma0, indice_vides, s1, s2):
         return {
@@ -593,15 +580,6 @@ class TassementPage(QWidget):
                 if widget:
                     html += f"<li>{widget.text()}</li>"
             html += "</ul>"
-
-            # 3. Exporter le graphique temporairement
-            temp_dir = tempfile.gettempdir()
-            graph_path = os.path.join(temp_dir, "graph_tassement_export.png")
-            self.graph_viewer.canvas.figure.savefig(graph_path, dpi=150)
-
-            # 4. Ajouter le graphique dans le HTML
-            html += "<h2 style='color:#007bff;'>Graph</h2>"
-            html += f"<img src='{graph_path}' width='600' />"
 
             # 5. Créer et écrire le document PDF
             doc = QTextDocument()
