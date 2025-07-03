@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QComboBox, QLineEdit,
-    QPushButton, QMessageBox, QCheckBox, QSizePolicy, QHBoxLayout
+    QPushButton, QMessageBox, QCheckBox, QSizePolicy, QHBoxLayout, QLabel
 )
 from PyQt6.QtCore import Qt
 from style import APP_STYLE
@@ -78,6 +78,18 @@ class HydroPage(QWidget):
         self.result_Ck_input.textEdited.connect(self._on_custom_ck_edited)
         self.use_custom_params_check.stateChanged.connect(self._on_custom_check_changed)
         self.use_custom_params_check.stateChanged.connect(self._toggle_custom_params)
+
+        # --- Add QLabel above the main layout (robust approach) ---
+        old_layout = self.layout()
+        main_widget = QWidget()
+        main_widget.setLayout(old_layout)
+        outer_layout = QVBoxLayout()
+        label = QLabel("Hydraulic Conductivity Calculation")
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        outer_layout.addWidget(label)
+        outer_layout.addWidget(main_widget)
+        QWidget.setLayout(self, outer_layout)
+        # --- End QLabel addition ---
 
     def set_other_page(self, other_page):
         self._other_page = other_page
@@ -508,7 +520,7 @@ class HydroPage(QWidget):
             graph_path = os.path.join(temp_dir, "graph_export.png")
             self.graph_viewer.canvas.figure.savefig(graph_path, dpi=150)
 
-            # Ajouter le graphique en HTML (en tant qu’image locale)
+            # Ajouter le graphique en HTML (en tant qu'image locale)
             html += "<h2 style='color:#007bff;'>Graph</h2>"
             html += f"<img src='{graph_path}' width='600' />"
 
