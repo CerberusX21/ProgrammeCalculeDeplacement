@@ -50,7 +50,7 @@ class FormulaClay:
             if self.Ei is None:
                 if pore_style == "Initial water content":
                     self.formula13a()
-                elif pore_style == "Frozen bulk density":
+                elif pore_style == "Frozen buld density":
                     self.formula13b()
                 elif pore_style == "Frozen void ratio":
                     self.formula13c()
@@ -86,6 +86,8 @@ class FormulaClay:
     def formula13b(self):
         numerator = self.density_sol - self.pores_sol
         denominator = self.pores_sol - 0.9174
+        if denominator == 0:
+            raise ZeroDivisionError
         self.Ei = numerator / denominator
 
     def formula13c(self):

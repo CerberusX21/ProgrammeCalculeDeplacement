@@ -1,3 +1,6 @@
+from PyQt6.QtWidgets import QMessageBox
+
+
 class EI_Tassement:
     """
     Classe pour le calcul de l'indice de glace ei* utilisé dans le modèle de tassement.
@@ -29,12 +32,17 @@ class EI_Tassement:
             ei_star = self.valeur_pore / 1.09  # Formule 13c
 
         else:
-            print('test4')
             raise ValueError("Invalid pore parameter type: Initial water content, Frozen buld density or Frozen void ratio expected.")
 
         if ei_star > 4:
-            raise ValueError("ei* exceeds the maximum threshold of 4.")
+            QMessageBox.critical(None,"Value out of range", "ei* exceeds the maximum threshold of 4."
+                                                            "ei* adjusted to 4")
+            ei_star = 4
+            return ei_star
         if ei_star < 0:
-            raise ValueError("ei* cannot be negative.")
+            QMessageBox.critical(None, "Value out of range", "ei* cannot be less than zero."
+                                                             "ei* adjusted to 0")
+            ei_star = 0
+            return ei_star
 
         return ei_star

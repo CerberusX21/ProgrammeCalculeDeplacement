@@ -348,9 +348,9 @@ class TassementPage(QWidget):
         if self.pores_sol_unit.currentText() == "kg/m³":
             data["valeur_pore"] /= 1000
         if data["type_pore"] == "Frozen buld density" and data["valeur_pore"] >= data["Specific gravity of solids"]:
-            print('test')
-            QMessageBox.warning(self, "Invalid value", "Make sure Specific gravity of solids > Frozen buld density")
-            return
+            QMessageBox.warning(self, "Invalid value", "Make sure Specific gravity of solids > Frozen buld density\n" + f"Calculated with Frozen buld density at {data['Specific gravity of solids']}.")
+            data["valeur_pore"] = data["Specific gravity of solids"]
+            print(data["valeur_pore"])
 
         try:
             # 1. Calcul ei*

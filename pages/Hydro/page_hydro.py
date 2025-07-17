@@ -276,9 +276,8 @@ class HydroPage(QWidget):
                                     f"The value for {label} must be between {min_val} and {max_val}.")
                 return
 
-        if self.pores_sol_unit.currentText() == "g/cm3":
+        if self.pores_sol_unit.currentText() == "kg/m³":
             data["pores_sol"] /= 1000
-
         if self.pores_sol.currentText() == "Frozen buld density" and data["pores_sol"] >= data["density_sol"]:
             QMessageBox.warning(self, "Invalid value", "Make sure Specific gravity of solids > Frozen buld density")
             return

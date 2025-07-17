@@ -48,7 +48,7 @@ class ClassificationSol:
                 return 0 if diff >= 0 else 1
         elif type_sol == "Liquid limit":
             if not (0 < self.valeur_sol <= 100):
-                raise ValueError("The value of wL must be between 0 and 100.")
+                raise ValueError("The value of Liquid limit must be between 0 and 100.")
             seuil = 0.01 * self.valeur_sol + 0.61
             diff = self.ei_star - seuil
             if abs(diff) <= self.marge:
@@ -62,7 +62,7 @@ class ClassificationSol:
                 return 0 if diff >= 0 else 1
         elif type_sol == "Fine fraction median diameter":
             if not (0.001 <= self.valeur_sol <= 0.1):
-                raise ValueError("The value of d50ff must be between 0.001 and 0.1 mm.")
+                raise ValueError("The value of Fine fraction median diameter must be between 0.001 and 0.1 mm.")
             seuil = 0.17 * math.log(self.valeur_sol) + 1.98
             diff = self.ei_star - seuil
             if abs(diff) <= self.marge:
@@ -75,4 +75,4 @@ class ClassificationSol:
                 self.is_near_limit = True
                 return 0 if diff >= 0 else 1
         else:
-            raise ValueError("Invalid soil type. Expected: clay%, wL or d50ff.")
+            raise ValueError("Invalid soil type. Expected: Clay content, Liquid limit or Fine fraction median diameter.")

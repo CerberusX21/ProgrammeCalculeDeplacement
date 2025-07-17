@@ -1,5 +1,8 @@
 import math
 
+from PyQt6.QtWidgets import QMessageBox
+
+
 class CalculCcStar:
     """
     Calcule la valeur de Cc* en fonction de ei*, du type de sol, de la valeur de l'indice,
@@ -40,16 +43,19 @@ class CalculCcStar:
         seuil = self.seuil_minimal()
 
         if cc_star <= seuil:
-            raise ValueError(
-                f"Cc* = {cc_star:.6f} is inferior to the minimum authorized threshold ({seuil:.6f}) for soil type {self.type}."
+            QMessageBox.critical(None, "Invalid information",
+                f"Cc* = {cc_star:.6f} is inferior to the minimum authorized threshold ({seuil:.6f}) for soil type {self.type}.\n"
+                f"Calculated with Cc* = {seuil:.6f}"
             )
+            cc_star = seuil
+            return cc_star
 
         return cc_star
 
     def seuil_minimal(self) -> float:
         if self.type == "Liquid limit":
             return 0.004 * self.valeur - 0.05
-        elif self.type == "Clay percentage":
+        elif self.type == "Clay content":
             return 0.001 * self.valeur + 0.05
         elif self.type == "Fine fraction median diameter":
             if self.valeur <= 0:
