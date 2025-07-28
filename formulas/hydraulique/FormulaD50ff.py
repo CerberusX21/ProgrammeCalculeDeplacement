@@ -1,5 +1,8 @@
 import math
 
+from PyQt6.QtWidgets import QMessageBox
+
+
 class FormulaD50ff:
     def __init__(self):
         self.type_sol = None
@@ -76,6 +79,7 @@ class FormulaD50ff:
         exponent = numerator / denominator
         sigma_0 = 0.9 * math.exp(exponent)
         if sigma_0 > 50:
+            QMessageBox.warning(None, "Value out of range", f"Sigma_0 is over the limit of 50 with a value of {sigma_0}")
             self.sigma_0 = 50
         else:
             self.sigma_0 = sigma_0
