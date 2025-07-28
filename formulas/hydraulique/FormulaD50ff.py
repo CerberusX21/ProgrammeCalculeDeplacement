@@ -28,7 +28,7 @@ class FormulaD50ff:
             if self.ei is None:
                 if pore_style == "Initial water content":
                     self.formula13a()
-                elif pore_style == "Frozen buld density":
+                elif pore_style == "Frozen bulk density":
                     self.formula13b()
                 elif pore_style == "Frozen void ratio":
                     self.formula13c()
@@ -50,7 +50,11 @@ class FormulaD50ff:
         base = self.sigma_v / self.sigma_0
         self.result = self.kv0 * base ** exponent
     def formula12(self):
-        numerator = ((-0.074 * self.type_sol + 0.014) * math.log10(self.ei) - 0.028 * self.type_sol - 0.096)
+        numerator = (
+                (-0.074 * math.log10(self.type_sol) + 0.014) * math.log10(self.ei)
+                - 0.028 * math.log10(self.type_sol)
+                - 0.096
+        )
         denominator = 0.30
         exponent = numerator / denominator
         self.e0 = 10 ** exponent
@@ -70,11 +74,15 @@ class FormulaD50ff:
         numerator = self.e0 + 0.25 * math.log10(self.type_sol) - 0.45
         denominator = 0.02 * math.log10(self.type_sol) - 0.06
         exponent = numerator / denominator
-        self.sigma_0 = 2 * math.exp(exponent)
+        sigma_0 = 0.9 * math.exp(exponent)
+        if sigma_0 > 50:
+            self.sigma_0 = 50
+        else:
+            self.sigma_0 = sigma_0
 
     def formula15(self):
         exponent = 3.1 * math.log10(self.type_sol) + (2.02 * math.log10(self.type_sol) + 23.6) * self.e0
-        self.kv0 = 2.2 * (10 ** (-10)) * math.exp(exponent)
+        self.kv0 = 1.3 * 2.2 * (10 ** (-10)) * math.exp(exponent)
 
     def formula16(self):
         self.cc = 0.74 * math.log10(self.e0) + 0.22

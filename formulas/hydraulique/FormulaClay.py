@@ -14,7 +14,7 @@ import math
         sigma_v (float): Contrainte verticale
         E0 (float): Indice des vides initial
         Ei (float): Indice des vides
-        sigma0 (float): Contrainte de référence
+        sigma_0 (float): Contrainte de référence
         kv0 (float): Perméabilité verticale
         Cc (float): Indice de compression
         Ck (float): Indice de perméabilité
@@ -31,7 +31,7 @@ class FormulaClay:
         self.sigma_v = None
         self.E0 = None
         self.Ei = None
-        self.sigma0 = None
+        self.sigma_0 = None
         self.kv0 = None
         self.Cc = None
         self.Ck = None
@@ -50,7 +50,7 @@ class FormulaClay:
             if self.Ei is None:
                 if pore_style == "Initial water content":
                     self.formula13a()
-                elif pore_style == "Frozen buld density":
+                elif pore_style == "Frozen bulk density":
                     self.formula13b()
                 elif pore_style == "Frozen void ratio":
                     self.formula13c()
@@ -65,11 +65,11 @@ class FormulaClay:
         except (ZeroDivisionError, OverflowError) as e:
             raise e
 
-        return self.result, self.Ei, self.Cc, self.Ck, self.E0, self.sigma0, self.kv0, self.sigma_v
+        return self.result, self.Ei, self.Cc, self.Ck, self.E0, self.sigma_0, self.kv0, self.sigma_v
 
     def formula11(self):
         exponent = -(self.Cc / self.Ck)
-        base = self.sigma_v / self.sigma0
+        base = self.sigma_v / self.sigma_0
         self.result = self.kv0 * base ** exponent
 
 
@@ -97,7 +97,11 @@ class FormulaClay:
         numerator = self.E0 - 0.0049 * self.type_sol - 0.82
         denominator = -0.00063 * self.type_sol - 0.06
         exponent = numerator / denominator
-        self.sigma0 = 2 * math.exp(exponent)
+        sigma_0 = 2 * math.exp(exponent)
+        if sigma_0 > 50:
+            self.sigma_0 = 50
+        else:
+            self.sigma_0 = sigma_0
 
     def formula15(self):
         exponent = -0.077 * self.type_sol + (-0.05 * self.type_sol + 20.5) * self.E0

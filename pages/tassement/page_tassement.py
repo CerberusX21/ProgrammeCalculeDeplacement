@@ -112,7 +112,7 @@ class TassementPage(QWidget):
 
         self.pores_sol = QComboBox()
         self.pores_sol.setProperty("type", "type")
-        self.pores_sol.addItems(["Initial water content", "Frozen buld density", "Frozen void ratio"])
+        self.pores_sol.addItems(["Initial water content", "Frozen bulk density", "Frozen void ratio"])
         self.pores_sol_unit = QComboBox()
 
         self.compress_sol = QComboBox()
@@ -347,8 +347,8 @@ class TassementPage(QWidget):
 
         if self.pores_sol_unit.currentText() == "kg/m³":
             data["valeur_pore"] /= 1000
-        if data["type_pore"] == "Frozen buld density" and data["valeur_pore"] >= data["Specific gravity of solids"]:
-            QMessageBox.warning(self, "Invalid value", "Make sure Specific gravity of solids > Frozen buld density\n" + f"Calculated with Frozen buld density at {data['Specific gravity of solids']}.")
+        if data["type_pore"] == "Frozen bulk density" and data["valeur_pore"] >= data["Specific gravity of solids"]:
+            QMessageBox.warning(self, "Invalid value", "Make sure Specific gravity of solids > Frozen bulk density\n" + f"Calculated with Frozen bulk density at {data['Specific gravity of solids']}.")
             data["valeur_pore"] = data["Specific gravity of solids"]
             print(data["valeur_pore"])
 

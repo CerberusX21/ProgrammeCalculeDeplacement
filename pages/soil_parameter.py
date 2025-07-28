@@ -87,7 +87,7 @@ def init_unit_mappings(self):
     """Initialize the unit mappings that are common to both pages"""
     self.type_unit_mapping = {
         self.type_sol: {"Clay content": ["%"], "Liquid limit": ["%"], "Fine fraction median diameter": ["mm"]},
-        self.pores_sol: {"Initial water content": ["kg/kg"], "Frozen buld density": ["kg/m³", "g/cm³"], "Frozen void ratio": ["Direct"]},
+        self.pores_sol: {"Initial water content": ["kg/kg"], "Frozen bulk density": ["kg/m³", "g/cm³"], "Frozen void ratio": ["-"]},
         self.compress_sol: {"Effective vertical stress": ["kPa"]},
         self.density_sol: {"Specific gravity of solids": ["-"]}
     }
@@ -101,7 +101,7 @@ def init_input_limits(self):
             "kg/kg": (0, float('inf')), 
             "kg/m³": (900, 3000),
             "g/cm³": (0.9, 3), 
-            "Direct": (0, float('inf'))
+            "-": (0, float('inf'))
         },
         self.compress_sol_unit: {"kPa": (0, float('inf'))},
         self.density_sol_unit: {"-": (1, 4)}

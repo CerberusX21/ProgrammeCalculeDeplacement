@@ -129,7 +129,7 @@ class HydroPage(QWidget):
 
         self.pores_sol = QComboBox()
         self.pores_sol.setProperty("type", "type")
-        self.pores_sol.addItems(["Initial water content", "Frozen buld density", "Frozen void ratio"])
+        self.pores_sol.addItems(["Initial water content", "Frozen bulk density", "Frozen void ratio"])
         self.pores_sol_unit = QComboBox()
 
         self.compress_sol = QComboBox()
@@ -278,8 +278,8 @@ class HydroPage(QWidget):
 
         if self.pores_sol_unit.currentText() == "kg/m³":
             data["pores_sol"] /= 1000
-        if self.pores_sol.currentText() == "Frozen buld density" and data["pores_sol"] >= data["density_sol"]:
-            QMessageBox.warning(self, "Invalid value", "Make sure Specific gravity of solids > Frozen buld density")
+        if self.pores_sol.currentText() == "Frozen bulk density" and data["pores_sol"] >= data["density_sol"]:
+            QMessageBox.warning(self, "Invalid value", "Make sure Specific gravity of solids > Frozen bulk density")
             return
 
         formula_class = {
@@ -330,12 +330,11 @@ class HydroPage(QWidget):
             self.results_display.add_result("", f"kv = {result:.2e}")
             # Show intermediate results
             self.results_display.add_result("", f"Ei = {ei or ei_calc:.3f}")
-            self.results_display.add_result("", f"Cc = {cc or cc_calc:.3f}")
-            self.results_display.add_result("", f"Ck = {ck or ck_calc:.3f}")
             self.results_display.add_result("", f"E0 = {e0:.3f}")
             self.results_display.add_result("", f"sigma0 = {sigma_0:.3f}")
             self.results_display.add_result("", f"kv0 = {kv0:.3e}")
-            self.results_display.add_result("", f"sigma_v = {sigma_v:.3f}")
+            self.results_display.add_result("", f"Cc = {cc or cc_calc:.3f}")
+            self.results_display.add_result("", f"Ck = {ck or ck_calc:.3f}")
             
             # Only update unchecked parameter displays
             if not (self.use_custom_params_check.isChecked() and self.result_EI_check.isChecked()):

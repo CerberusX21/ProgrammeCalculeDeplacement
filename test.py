@@ -21,8 +21,8 @@ class TestEITassement(unittest.TestCase):
         self.assertAlmostEqual(result, expected, places=6)
     
     def test_calcul_avec_rho_f(self):
-        # Test avec densité du sol gelé Frozen buld density
-        ei = EI_Tassement(valeur_pore=1.5, Specific_gravity_of_solids=2.65, type_pore="Frozen buld density")
+        # Test avec densité du sol gelé Frozen bulk density
+        ei = EI_Tassement(valeur_pore=1.5, Specific_gravity_of_solids=2.65, type_pore="Frozen bulk density")
         result = ei.calculer()
         expected = (2.65 - 1.5) / (1.5 - 0.9174)
         self.assertAlmostEqual(result, expected, places=6)
@@ -48,9 +48,9 @@ class TestEITassement(unittest.TestCase):
             EI_Tassement(valeur_pore=-10, Specific_gravity_of_solids=2.7, type_pore="Thawed soil initial water content").calculer()
     
     def test_validation_rho_f_critique(self):
-        # Test Frozen buld density = 0.9174 (division par zéro)
+        # Test Frozen bulk density = 0.9174 (division par zéro)
         with self.assertRaises(ValueError):
-            EI_Tassement(valeur_pore=0.9174, Specific_gravity_of_solids=2.7, type_pore="Frozen buld density").calculer()
+            EI_Tassement(valeur_pore=0.9174, Specific_gravity_of_solids=2.7, type_pore="Frozen bulk density").calculer()
     
     def test_validation_ef_limite(self):
         # Test ef > 4.36
@@ -383,8 +383,8 @@ class TestCalculsIntegres(unittest.TestCase):
         """Test complet : sol Ice-Rich avec Liquid limit"""
         print("\n=== Test complet : Sol Ice-Rich avec Liquid limit ===")
         
-        # Étape 1: Calcul de ei* avec Frozen buld density
-        ei_calc = EI_Tassement(valeur_pore=1.8, Specific_gravity_of_solids=2.65, type_pore="Frozen buld density")
+        # Étape 1: Calcul de ei* avec Frozen bulk density
+        ei_calc = EI_Tassement(valeur_pore=1.8, Specific_gravity_of_solids=2.65, type_pore="Frozen bulk density")
         ei_star = ei_calc.calculer()
         print(f"ei* = {ei_star:.4f}")
         
