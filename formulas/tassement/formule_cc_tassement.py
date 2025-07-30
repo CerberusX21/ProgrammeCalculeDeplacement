@@ -19,14 +19,11 @@ class CalculCcStar:
         if self.ei_star <= 0:
             raise ValueError("ei* must be strictly positive for the log calculation.")
         log_ei = math.log10(self.ei_star)
-        # Ice-Poor (1)
-        if self.etat == 1:
-            cc_star = 0.74 * log_ei + 0.22  # Cc* = 0.74 * log(ei*) + 0.22
 
         # Ice-Rich (0)
-        elif self.etat == 0:
+        if self.etat == 0:
             if self.type == "Liquid limit":
-                cc_star = (0.0081 * self.valeur - 0.019) * log_ei + (0.0033 * self.valeur + 0.037)
+                cc_star = (0.0081 * self.valeur - 0.19) * math.log10(self.ei_star) + (0.0033 * self.valeur + 0.037)
             elif self.type == "Clay content":
                 cc_star = (0.0051 * self.valeur - 0.18) * log_ei + (0.0015 * self.valeur + 0.096)
             elif self.type == "Fine fraction median diameter":
@@ -36,6 +33,11 @@ class CalculCcStar:
                 cc_star = (-0.11 * log_d50 + 0.080) * log_ei + (-0.097 * log_d50 - 0.082)
             else:
                 raise ValueError("Unknown soil type: expected 'Clay percentage', 'Liquid limit', or 'Fine fraction median diameter'.")
+
+        # Ice-Poor (1)
+        elif self.etat == 1:
+            cc_star = 0.74 * log_ei + 0.22  # Cc* = 0.74 * log(ei*) + 0.22
+
         else:
             raise ValueError("Unrecognized soil state: expected IR or IP.")
 

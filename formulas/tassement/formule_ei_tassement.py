@@ -19,7 +19,7 @@ class EI_Tassement:
         if self.type_pore == "Initial water content":
             if self.valeur_pore <= 0:
                 raise ValueError("Initial water content must be positive.")
-            ei_star = 0.01 * self.valeur_pore * self.Specific_gravity_of_solids  # Formule 13a
+            ei_star = 0.01 * self.valeur_pore * self.Specific_gravity_of_solids
 
         elif self.type_pore == "Frozen bulk density":
             if abs(self.valeur_pore - 0.9174) < 1e-6: # pour éviter la division par zéro et erreurs arrondies

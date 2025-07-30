@@ -16,31 +16,29 @@ class CalculSigma0:
     def calculer(self) -> float:
         # Calcul brut selon type de sol
         if self.type_sol == "Liquid limit":
-            if self.etat_sol == 0:  # Ice-Rich
-                sigma0 = 0.0081 * self.valeur + 0.019
-            else:  # Ice-Poor
-                sigma0 = 0.0033 * self.valeur + 0.037
+            exponent = (self.e0_star - 0.014 * self.valeur - 0.42)
+            denominator = (-0.0014 * self.valeur - 0.012)
+            sigma0 = math.exp(exponent / denominator)
+
 
         elif self.type_sol == "Clay content":
-            if self.etat_sol == 0:  # Ice-Rich
-                sigma0 = 0.0081 * self.valeur + 0.019
-            else:  # Ice-Poor
-                sigma0 = 0.0033 * self.valeur + 0.037
+            exponent = (self.e0_star - 0.0049 * self.valeur - 0.82)
+            denominator = (-0.00063 * self.valeur - 0.06)
+            sigma0 = math.exp(exponent / denominator)
 
         elif self.type_sol == "Fine fraction median diameter":
             if self.valeur <= 0:
                 raise ValueError("Fine fraction median diameter must be greater than zero for the log.")
-            if self.etat_sol == 0:  # Ice-Rich
-                sigma0 = -0.017 * math.log10(self.valeur) + 0.0175
-            else:  # Ice-Poor
-                sigma0 = -0.007 * math.log10(self.valeur) + 0.0075
+            exponent = (self.e0_star + 0.25 * math.log10(self.valeur) - 0.45)
+            denominator = (0.02 * math.log10(self.valeur) - 0.06)
+            sigma0 = math.exp(exponent / denominator)
 
         else:
             raise ValueError("Soil type is invalid. Expected: Liquid limit, Clay content or Fine fraction median diameter.")
 
         # --- Application des seuils selon l'état du sol ---
         if self.etat_sol == 1:  # Ice-Poor
-            sigma0 = max(1, min(50, sigma0))
+            sigma0 = min(50, sigma0)
 
         elif self.etat_sol == 0:  # Ice-Rich
             sigma0 = max(1, min(50, sigma0))

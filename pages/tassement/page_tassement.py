@@ -417,14 +417,15 @@ class TassementPage(QWidget):
             e0_star = CalculE0Tassement(ei_star, cc_star, code_etat).calculer()
             sigma0 = CalculSigma0(e0_star, data["type_sol"], data["type_sol_valeur"], code_etat).calculer()
             indice_vides = CalculIndiceDesVides(e0_star, cc_star, data["sigma_v"], sigma0).calculer()
-            ef = data["valeur_pore"] if data["type_pore"] == "Frozen void ratio" else ei_star * 1.09
-            s1, s2, s_total = CalculTassements(ef, e0_star, indice_vides).calculer()
+            #ef = data["valeur_pore"] if data["type_pore"] == "Frozen void ratio" else ei_star * 1.09
+            s1, s2, s3, s_total = CalculTassements(ei_star, e0_star, indice_vides).calculer()
 
             # 5. Display results exactly as before
             self.results_display.clear()
             self.results_display.add_result("", f"Total settlement S = {s_total:.2f} %")
             self.results_display.add_result("", f"Settlement S1 (Drainage of excess melt water) = {s1:.2f} %")
             self.results_display.add_result("", f"Settlement S2 (compression) = {s2:.2f} %")
+            self.results_display.add_result("", f"Settlement S3 (compression) = {s3:.2f} %")
             # Show intermediate results
             self.results_display.add_result("", f"ei* = {ei_star:.3f}")
             self.results_display.add_result("", f"Cc* = {cc_star:.3f}")
