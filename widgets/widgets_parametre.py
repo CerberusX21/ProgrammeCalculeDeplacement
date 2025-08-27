@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import QHBoxLayout, QWidget, QSizePolicy
 from PyQt6.QtCore import Qt
 
 def parametre(widget1, widget2, widget3):
+    """Crée une ligne horizontale avec trois widgets (1:1:3 en étirement)."""
     row = QHBoxLayout()
     row.setContentsMargins(0, 0, 0, 0)
     row.setSpacing(10)
@@ -13,6 +14,7 @@ def parametre(widget1, widget2, widget3):
     return container
 
 def parametre_result_inter(widget1, widget2):
+    """Crée une ligne centrée avec un libellé et un champ de valeur fixe."""
     row = QHBoxLayout()
     row.setContentsMargins(0, 0, 0, 0)
     row.setSpacing(10)

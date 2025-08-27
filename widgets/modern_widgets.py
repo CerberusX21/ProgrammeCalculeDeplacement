@@ -8,14 +8,14 @@ from typing import List, Optional, Tuple
 import os
 
 class ModernGroupBox(QGroupBox):
-    """A modern styled group box with optional icon."""
+    """Conteneur groupé au style moderne, utilisé pour regrouper des sections UI."""
     def __init__(self, title: str = "", icon: str = ""):
         super().__init__()
         self.setTitle(title)
         self.setObjectName("modernGroupBox")
 
 class ModernParameterWidget(QWidget):
-    """A modern widget for displaying parameters in a structured table format."""
+    """Widget affichant une ligne de paramètre (nom, type, unité, valeur)."""
     
     COLUMN_STRETCHES = {
         "name": 3,    # Parameter name column
@@ -33,7 +33,7 @@ class ModernParameterWidget(QWidget):
     def setup_ui(self, param_name: str, param_widget: Optional[QWidget], 
                  unit_widget: Optional[QWidget], value_widget: Optional[QWidget], 
                  help_text: str) -> None:
-        """Set up the UI layout with proper spacing and sizing."""
+        """Construit la mise en page avec espacements et tailles appropriés."""
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
@@ -63,7 +63,7 @@ class ModernParameterWidget(QWidget):
     def _configure_widget_sizes(self, param_widget: Optional[QWidget], 
                               unit_widget: Optional[QWidget], 
                               value_widget: Optional[QWidget]) -> None:
-        """Configure the sizes of the widgets."""
+        """Configure les tailles minimales/maximales des widgets fournis."""
         if param_widget:
             param_widget.setMinimumWidth(100)
             param_widget.setMaximumWidth(120)
@@ -136,7 +136,7 @@ class ModernSoilParameterSection(QWidget):
         self.parameters_layout.addLayout(row)
 
 class ModernResultsSection(QWidget):
-    """A modern section for displaying results with optional checkboxes."""
+    """Section de résultats avec cases à cocher pour activer des surcharges manuelles."""
     
     DISABLED_STYLE = """
         QLineEdit:disabled, QComboBox:disabled {
@@ -151,7 +151,7 @@ class ModernResultsSection(QWidget):
         self._init_ui()
 
     def _init_ui(self) -> None:
-        """Initialize the UI layout."""
+        """Initialise la mise en page interne."""
         self.layout = QVBoxLayout(self)
         self.layout.setSpacing(8)
         self.layout.setContentsMargins(4, 6, 4, 6)
@@ -161,7 +161,7 @@ class ModernResultsSection(QWidget):
         self.layout.addLayout(self.parameters_layout)
 
     def add_result(self, label: str, unit_widget: QWidget, value_widget: QWidget) -> QCheckBox:
-        """Add a result row with label, unit, and value widgets."""
+        """Ajoute une ligne de résultat (libellé, unité, valeur) et renvoie la checkbox."""
         grid = self._create_result_grid()
         checkbox = self._create_result_checkbox(label, [unit_widget, value_widget])
         
@@ -170,7 +170,7 @@ class ModernResultsSection(QWidget):
         return checkbox
 
     def add_result_no_value(self, label: str, unit_widget: QWidget) -> QCheckBox:
-        """Add a result row with only a unit selection."""
+        """Ajoute une ligne de résultat ne comportant qu'une sélection d'unité."""
         grid = self._create_result_grid()
         checkbox = self._create_result_checkbox(label, [unit_widget])
         
@@ -184,14 +184,14 @@ class ModernResultsSection(QWidget):
         return checkbox
 
     def _create_result_grid(self) -> QGridLayout:
-        """Create a grid layout for results with proper spacing."""
+        """Crée une grille pour les résultats avec des espacements cohérents."""
         grid = QGridLayout()
         grid.setSpacing(3)
         grid.setContentsMargins(2, 0, 2, 0)
         return grid
 
     def _create_result_checkbox(self, label: str, widgets: List[QWidget]) -> QCheckBox:
-        """Create a checkbox that controls the enabled state of widgets."""
+        """Crée une case à cocher contrôlant l'activation des widgets associés."""
         checkbox = QCheckBox(label)
         for widget in widgets:
             widget.setStyleSheet(self.DISABLED_STYLE)
@@ -203,7 +203,7 @@ class ModernResultsSection(QWidget):
 
     def _add_widgets_to_grid(self, grid: QGridLayout, checkbox: QCheckBox, 
                             unit_widget: QWidget, value_widget: QWidget) -> None:
-        """Add widgets to the grid with proper stretching."""
+        """Ajoute les widgets à la grille avec bons rapports d'élasticité."""
         grid.addWidget(checkbox, 0, 0)
         grid.addWidget(value_widget, 0, 1)
         grid.addWidget(unit_widget, 0, 2)
@@ -213,20 +213,20 @@ class ModernResultsSection(QWidget):
         grid.setColumnStretch(2, 1)  # Unit
 
     def _toggle_widgets(self, state: int, widgets: List[QWidget]) -> None:
-        """Toggle the enabled state of widgets based on checkbox state."""
+        """Active/désactive les widgets selon l'état de la case à cocher."""
         enabled = state == Qt.CheckState.Checked.value
         for widget in widgets:
             widget.setEnabled(enabled)
 
 class ModernResultsDisplay(QWidget):
-    """A modern widget for displaying calculation results."""
+    """Widget d'affichage des résultats de calcul sous forme de lignes stylisées."""
     
     def __init__(self):
         super().__init__()
         self._init_ui()
 
     def _init_ui(self) -> None:
-        """Initialize the UI components."""
+        """Initialise les composants UI internes."""
         # Main layout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -250,14 +250,14 @@ class ModernResultsDisplay(QWidget):
         layout.addWidget(self.results_area)
 
     def clear(self):
-        """Clear all results from the display."""
+        """Efface tous les résultats affichés."""
         for i in reversed(range(self.results_layout.count())): 
             widget = self.results_layout.itemAt(i).widget()
             if widget:
                 widget.setParent(None)
 
     def add_result(self, label, value):
-        """Add a single result to the display."""
+        """Ajoute un résultat formaté à l'affichage."""
         result_label = QLabel(f"{label} {value}")
         result_label.setStyleSheet("""
             QLabel {
@@ -273,7 +273,7 @@ class ModernResultsDisplay(QWidget):
         self.results_layout.addWidget(result_label)
 
 class ModernExportButton(QPushButton):
-    """Un bouton d'export moderne avec style personnalisé et icône."""
+    """Bouton d'export moderne avec icône optionnelle et style personnalisé."""
     
     def __init__(self, text="Export", icon_path=None, parent=None):
         super().__init__(text, parent)
@@ -324,7 +324,7 @@ class ModernExportButton(QPushButton):
         """)
 
 class ModernResultsPanel(QWidget):
-    """A modern panel grouping results display and graphs with integrated export button."""
+    """Panneau moderne regroupant l'affichage des résultats et un bouton d'export."""
     def __init__(self):
         super().__init__()
         
@@ -395,9 +395,9 @@ class ModernResultsPanel(QWidget):
         main_layout.addWidget(self.blue_panel)
 
     def add_widget(self, widget):
-        """Add a widget to the content container."""
+        """Ajoute un widget dans le conteneur de contenu."""
         self.content_layout.addWidget(widget)
     
     def get_export_button(self):
-        """Return the export button for signal connections."""
+        """Retourne le bouton d'export pour les connexions de signaux."""
         return self.export_button

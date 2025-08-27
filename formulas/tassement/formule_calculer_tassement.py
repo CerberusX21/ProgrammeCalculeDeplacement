@@ -1,10 +1,12 @@
 class CalculTassements:
+    """Calcule S1, S2, S3 et S_total (%) pour le tassement au dégel."""
     def __init__(self, ei_star: float, e0_star: float, e_final: float):
         self.ei_star = ei_star
         self.e0_star = e0_star
         self.e_final = e_final
 
     def calculer(self):
+        """Retourne (S1, S2, S3, S_total) en protégeant la division par zéro."""
         if self.ei_star + 1 == 0:
             raise ValueError("Division by zero is not allowed in the settlement calculation.")
 

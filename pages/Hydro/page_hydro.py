@@ -15,12 +15,16 @@ from PyQt6.QtGui import QPainter, QTextDocument
 import tempfile
 import os
 
-"""
-Module Hydro – interface graphique de la section hydraulique.
-Contient les composants visuels et les fonctions de contrôle de l’interface utilisateur.
+"""Page Hydro – interface graphique de la section hydraulique.
+
+Rôle:
+- Gérer les widgets d'entrée/sortie et l'orchestration des calculs
+- Valider les entrées, afficher les résultats, exporter en PDF
+- Synchroniser les champs avec la page de tassement
 """
 
 class HydroPage(QWidget):
+    """Contrôleur/vue de la page de conductivité hydraulique."""
     def __init__(self):
         super().__init__()
         self._other_page = None
@@ -85,15 +89,18 @@ class HydroPage(QWidget):
         # --- End QLabel addition ---
 
     def set_other_page(self, other_page):
+        """Enregistre une référence vers l'autre page pour la synchronisation."""
         self._other_page = other_page
 
     def _sync_field(self, field_name, value):
+        """Recopie la valeur d'un QLineEdit sur l'autre page sans boucle infinie."""
         if self._other_page and not self._syncing:
             self._other_page._syncing = True
             getattr(self._other_page, field_name).setText(value)
             self._other_page._syncing = False
 
     def _sync_combo(self, combo_name, index):
+        """Aligne l'index d'un QComboBox correspondant sur l'autre page."""
         if self._other_page and not self._syncing:
             self._other_page._syncing = True
             other_combo = getattr(self._other_page, combo_name)
@@ -101,21 +108,26 @@ class HydroPage(QWidget):
             self._other_page._syncing = False
 
     def _on_custom_ei_edited(self):
+        """Marque ei* comme modifié manuellement par l'utilisateur."""
         self._custom_ei_edited = True
 
     def _on_custom_cc_edited(self):
+        """Marque Cc* comme modifié manuellement par l'utilisateur."""
         self._custom_cc_edited = True
 
     def _on_custom_ck_edited(self):
+        """Marque Ck* comme modifié manuellement par l'utilisateur."""
         self._custom_ck_edited = True
 
     def _on_custom_check_changed(self, state):
+        """Réinitialise les drapeaux d'édition lors de l'activation des résultats custom."""
         if state == Qt.CheckState.Checked.value:
             self._custom_ei_edited = False
             self._custom_cc_edited = False
             self._custom_ck_edited = False
 
     def _init_widgets(self):
+        """Crée et configure les widgets d'entrée (combos/champs)."""
         self.type_sol_input = self._create_line_edit("Value...")
         self.pores_input = self._create_line_edit("Value...")
         self.compress_input = self._create_line_edit("Value...")
@@ -177,11 +189,13 @@ class HydroPage(QWidget):
         self.density_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('density_sol_unit', idx))
 
     def _create_line_edit(self, placeholder):
+        """Fabrique un QLineEdit avec placeholder."""
         edit = QLineEdit()
         edit.setPlaceholderText(placeholder)
         return edit
 
     def _create_optional_input(self, placeholder):
+        """Crée un QLineEdit désactivé lié à une QCheckBox pour saisie optionnelle."""
         edit = QLineEdit()
         edit.setPlaceholderText(placeholder)
         checkbox = QCheckBox("Use custom result?")
@@ -190,6 +204,7 @@ class HydroPage(QWidget):
         return edit, checkbox
 
     def _connect_unit_updates(self):
+        """Connecte les changements des types aux listes d'unités associées."""
         self.type_sol.currentIndexChanged.connect(lambda: self.update_unit_options(self.type_sol, self.type_sol_unit))
         self.pores_sol.currentIndexChanged.connect(
             lambda: self.update_unit_options(self.pores_sol, self.pores_sol_unit))
@@ -197,12 +212,13 @@ class HydroPage(QWidget):
             lambda: self.update_unit_options(self.compress_sol, self.compress_sol_unit))
 
     def _set_initial_units(self):
+        """Initialise les unités affichées selon les types courants."""
         self.update_unit_options(self.type_sol, self.type_sol_unit)
         self.update_unit_options(self.pores_sol, self.pores_sol_unit)
         self.update_unit_options(self.compress_sol, self.compress_sol_unit)
 
     def _update_combo_state(self, combo: QComboBox):
-        """Update the enabled state and style of a combo box based on number of items"""
+        """Active/désactive et ajuste le style d'un combo selon le nombre d'options."""
         has_multiple_options = combo.count() > 1
         combo.setEnabled(has_multiple_options)
         
@@ -224,6 +240,7 @@ class HydroPage(QWidget):
             combo.setStyleSheet("")
 
     def update_unit_options(self, type_combo: QComboBox, unit_combo: QComboBox):
+        """Met à jour la liste d'unités du combo `unit_combo` selon `type_combo`."""
         selected_type = type_combo.currentText()
         units = self.type_unit_mapping.get(type_combo, {}).get(selected_type, [])
         if units:
@@ -239,6 +256,10 @@ class HydroPage(QWidget):
             self._update_combo_state(unit_combo)
 
     def validate_input(self, value: float, unit_combo):
+        """Vérifie qu'une valeur respecte les bornes pour l'unité sélectionnée.
+
+        Retourne (is_valid, min, max).
+        """
         if unit_combo is False:
             return (1 <= value <= 4), 1, 4
         unit = unit_combo.currentText()
@@ -249,6 +270,7 @@ class HydroPage(QWidget):
         return True, None, None
 
     def calculate(self):
+        """Réalise les calculs hydrauliques et affiche les résultats formatés."""
         try:
             data = {
                 'type_sol': float(self.type_sol_input.text()),
@@ -349,6 +371,7 @@ class HydroPage(QWidget):
             return
 
     def reset(self):
+        """Réinitialise les champs, combos, cases à cocher et les résultats."""
         for input_widget in [
             self.type_sol_input, self.pores_input, self.compress_input,
             self.density_input, self.result_EI_input, self.result_Cc_input, self.result_Ck_input
@@ -375,6 +398,7 @@ class HydroPage(QWidget):
         self.results_display.clear()
 
     def _toggle_custom_params(self, state):
+        """Affiche/masque la section de résultats personnalisés et désactive les champs."""
         is_checked = state == Qt.CheckState.Checked.value
         self.results_group.setVisible(is_checked)
         
@@ -409,6 +433,7 @@ class HydroPage(QWidget):
             self.result_Ck_unit.setStyleSheet(disabled_style)
 
     def _set_value_column_width(self, width=120):
+        """Fixe des largeurs cohérentes pour la colonne des valeurs."""
         self.type_sol_input.setMinimumWidth(width)
         self.type_sol_input.setMaximumWidth(width)
         self.pores_input.setMinimumWidth(width)
@@ -429,6 +454,7 @@ class HydroPage(QWidget):
             self.result_Ck_input.setMaximumWidth(width)
 
     def _setup_custom_results(self):
+        """Construit la section des paramètres personnalisés (ei*, Cc*, Ck*)."""
         # Create the custom results group
         self.results_group = ModernGroupBox("Hydraulic Custom Parameters")
         

@@ -1,0 +1,56 @@
+flowchart TD
+    A[ProgrammeCalculeDeplacement]
+
+    subgraph B[formulas/]
+      direction TB
+      subgraph B1[hydraulique/]
+        B1a[FormulaClay.py]
+        B1b[FormulaLiquid.py]
+        B1c[FormulaD50ff.py]
+      end
+      subgraph B2[tassement/]
+        B2a[formule_ei_tassement.py]
+        B2b[formule_cc_tassement.py]
+        B2c[formule_e0_tassement.py]
+        B2d[formule_sigma0.py]
+        B2e[formule_indice_des_vides.py]
+        B2f[formule_calculer_tassement.py]
+      end
+    end
+
+    subgraph C[pages/]
+      direction TB
+      subgraph C1[Hydro/]
+        C1a[page_hydro.py]
+        C1b[hydro_layout.py]
+      end
+      subgraph C2[tassement/]
+        C2a[page_tassement.py]
+      end
+      C3[soil_parameter.py]
+    end
+
+    subgraph D[widgets/]
+      D1[modern_widgets.py]
+      D2[widgets_parametre.py]
+    end
+
+    subgraph E[docs/]
+      E1[source/]
+    end
+
+    F[main.py]
+    G[ui_main.py]
+    H[style.py]
+    I[test.py]
+
+    A --> B
+    A --> C
+    A --> D
+    A --> E
+    A --> F
+    A --> G
+    A --> H
+    A --> I
+
+

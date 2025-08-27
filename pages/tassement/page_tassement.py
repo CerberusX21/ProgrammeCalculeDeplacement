@@ -22,6 +22,7 @@ import tempfile
 import os
 
 class TassementPage(QWidget):
+    """Contrôleur/vue de la page de tassement (consolidation au dégel)."""
     def __init__(self):
         super().__init__()
         self._other_page = None
@@ -53,17 +54,17 @@ class TassementPage(QWidget):
         self.calculate_button = QPushButton("Calculate")
         self.reset_button = QPushButton("Reset")
 
-        #Pour connecter le bouton export à la méthode d'exportation
+        # Pour connecter le bouton export à la méthode d'exportation
         self.results_panel.get_export_button().clicked.connect(self.export_to_pdf)
         
         
-        # Set up the main layout first
+        # Mise en place du layout principal
         assemble_hydro_layout(self)
         
-        # Add the settlement-specific custom results section
+        # Ajoute la section de résultats personnalisés (spécifique au tassement)
         self._setup_custom_results()
         
-        # Connect signals
+        # Connexions des signaux de calcul et réinitialisation
         self.calculate_button.clicked.connect(lambda: self.calculate(self.results_display))
         self.reset_button.clicked.connect(self.reset)
         
@@ -72,7 +73,7 @@ class TassementPage(QWidget):
             lambda: self.calculate(self.results_display, from_manual_classification=True)
         )
         
-        # For syncing data between pages
+        # Synchronisation des données entre les deux pages
         self.type_sol_input.textChanged.connect(self._sync_type_sol)
         self.pores_input.textChanged.connect(self._sync_pores)
         self.compress_input.textChanged.connect(self._sync_compress)
@@ -99,6 +100,7 @@ class TassementPage(QWidget):
         # --- End QLabel addition ---
 
     def _init_widgets(self):
+        """Crée et configure les widgets d'entrée (combos/champs)."""
         self.type_sol_input = self._create_line_edit("Value...")
         self.pores_input = self._create_line_edit("Value...")
         self.compress_input = self._create_line_edit("Value...")
@@ -158,6 +160,7 @@ class TassementPage(QWidget):
         self.density_sol_unit.currentIndexChanged.connect(lambda idx: self._sync_combo('density_sol_unit', idx))
 
     def _setup_custom_results(self):
+        """Construit la section des paramètres personnalisés (ei*, Cc*, type de sol)."""
         # Create the custom results group
         self.results_group = ModernGroupBox("Settlement Custom Parameters")
         
@@ -225,7 +228,7 @@ class TassementPage(QWidget):
                     left_layout.insertWidget(left_layout.count() - 1, self.results_group)
 
     def _toggle_input_fields(self, state, widgets):
-        """Enable or disable input fields based on checkbox state"""
+        """Active/désactive des champs en fonction de la case à cocher associée."""
         enabled = state == Qt.CheckState.Checked.value
         for widget in widgets:
             widget.setEnabled(enabled)
@@ -242,6 +245,7 @@ class TassementPage(QWidget):
                     """)
 
     def _toggle_custom_params(self, state):
+        """Affiche/masque la section des paramètres personnalisés."""
         is_checked = state == Qt.CheckState.Checked.value
         self.results_group.setVisible(is_checked)
         
@@ -256,11 +260,13 @@ class TassementPage(QWidget):
             # through the connected _toggle_input_fields method
 
     def _create_line_edit(self, placeholder):
+        """Fabrique un QLineEdit avec placeholder."""
         edit = QLineEdit()
         edit.setPlaceholderText(placeholder)
         return edit
 
     def _adjust_combo_box_widths(self):
+        """Harmonise les largeurs minimales/maximales des combos."""
         for combo in [self.type_sol, self.type_sol_unit,
                       self.pores_sol, self.pores_sol_unit,
                       self.compress_sol, self.compress_sol_unit,
@@ -271,6 +277,7 @@ class TassementPage(QWidget):
             combo.setMinimumHeight(20)
 
     def _connect_unit_updates(self):
+        """Connecte les changements des types aux listes d'unités associées."""
         self.type_sol.currentIndexChanged.connect(lambda: self.update_unit_options(self.type_sol, self.type_sol_unit))
         self.pores_sol.currentIndexChanged.connect(
             lambda: self.update_unit_options(self.pores_sol, self.pores_sol_unit))
@@ -280,12 +287,14 @@ class TassementPage(QWidget):
             lambda: self.update_unit_options(self.density_sol, self.density_sol_unit))
 
     def _set_initial_units(self):
+        """Initialise les unités affichées selon les types courants."""
         self.update_unit_options(self.type_sol, self.type_sol_unit)
         self.update_unit_options(self.pores_sol, self.pores_sol_unit)
         self.update_unit_options(self.compress_sol, self.compress_sol_unit)
         self.update_unit_options(self.density_sol, self.density_sol_unit)
 
     def update_unit_options(self, type_combo: QComboBox, unit_combo: QComboBox):
+        """Met à jour la liste d'unités du combo `unit_combo` selon `type_combo`."""
         selected_type = type_combo.currentText()
         units = self.type_unit_mapping.get(type_combo, {}).get(selected_type, [])
         if units:
@@ -301,6 +310,10 @@ class TassementPage(QWidget):
             self._update_combo_state(unit_combo)
 
     def validate_input(self, value: float, unit_combo):
+        """Vérifie qu'une valeur respecte les bornes pour l'unité sélectionnée.
+
+        Retourne (is_valid, min, max).
+        """
         if unit_combo is False:
             return (1 <= value <= 4), 1, 4
         unit = unit_combo.currentText()
@@ -311,6 +324,7 @@ class TassementPage(QWidget):
         return True, None, None
 
     def calculate(self, results_display, from_manual_classification=False):
+        """Exécute la chaîne de calcul du tassement et affiche les résultats."""
         if not all([
             self.type_sol_input.text().strip(),
             self.pores_input.text().strip(),

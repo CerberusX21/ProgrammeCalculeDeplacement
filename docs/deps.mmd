@@ -1,0 +1,61 @@
+flowchart TB
+
+  %% Top chain
+  main["main.py"] --> ui["ui_main.py"]
+  ui --> stylePy["style.py"]
+
+  %% Shared directly UNDER style (and ABOVE pages)
+  stylePy --> Shared
+  subgraph Shared["used by both pages"]
+    direction TB
+    soil_param["soil_parameter.py"]
+    modern["modern_widgets.py"]
+    wparam["widgets_parametre.py"]
+  end
+
+  %% Pages are placed UNDER Shared
+  Shared --> Tassement
+  subgraph Tassement["Tassement"]
+    direction TB
+    tass_page["tassement/page_tassement.py"]
+    subgraph FormulesTass["formulas/tassement/"]
+      direction TB
+      fei["formule_ei_tassement.py"]
+      fcc["formule_cc_tassement.py"]
+      fe0["formule_e0_tassement.py"]
+      fsigma0["formule_sigma0.py"]
+      findice["formule_indice_des_vides.py"]
+      ftass["formule_calculer_tassement.py"]
+    end
+  end
+
+  Shared --> Hydro
+  subgraph Hydro["Hydro"]
+    direction TB
+    hydro_page["Hydro/page_hydro.py"]
+    hydro_layout["Hydro/hydro_layout.py"]
+    subgraph FormulesHydro["formulas/hydraulique/"]
+      direction TB
+      fClay["FormulaClay.py"]
+      fLiquid["FormulaLiquid.py"]
+      fD50["FormulaD50ff.py"]
+    end
+  end
+
+  %% Page -> their formulas/layout (kept below each page)
+  tass_page --> fei
+  tass_page --> fcc
+  tass_page --> fe0
+  tass_page --> fsigma0
+  tass_page --> findice
+  tass_page --> ftass
+
+  hydro_page --> fClay
+  hydro_page --> fLiquid
+  hydro_page --> fD50
+  hydro_page --> hydro_layout
+
+  %% NOTE: we intentionally DO NOT draw arrows from pages to the files inside Shared.
+  %% That keeps the Shared block ABOVE the pages in the layout.
+
+  linkStyle default interpolate basis

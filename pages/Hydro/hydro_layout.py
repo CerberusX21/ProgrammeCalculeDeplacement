@@ -6,9 +6,17 @@ from PyQt6.QtCore import Qt
 from widgets.modern_widgets import ModernParameterWidget, ModernGroupBox
 
 def assemble_hydro_layout(self):
+    """Construit la mise en page de la page hydraulique.
+
+    - Colonne de gauche: paramètres d'entrée (type de sol, paramètre de pore,
+      contrainte efficace, densité spécifique)
+    - Colonne de droite: résultats (texte) et zone de graphe
+    - Stocke un pointeur vers `self.results_group` pour le pilotage depuis la page
+    """
     main_layout = QHBoxLayout()
 
     def make_headers():
+        """Crée l'en-tête des colonnes pour les tables de paramètres."""
         headers_layout = QGridLayout()
         headers_layout.addWidget(QLabel("<b>Parameter</b>"), 0, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
         headers_layout.addWidget(QLabel("<b>Type</b>"), 0, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
@@ -21,6 +29,7 @@ def assemble_hydro_layout(self):
         return headers_layout
 
     def make_separator():
+        """Ligne séparatrice horizontale discrète."""
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.HLine)
         sep.setStyleSheet("background-color: #e2e8f0; height: 1px;")

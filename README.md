@@ -2,7 +2,7 @@
 
 1. Créer un environnement virtuel :
    python -m venv .venv
-   .venv\Scripts\activate   # Windows
+   .venv\Scripts\activate
 
 2. Installer les dépendances :
    pip install pyqt6
@@ -20,3 +20,6 @@ Puis exécuter :
 
 L’exécutable sera disponible dans le dossier dist/ :
    dist/main.exe
+
+## 🗺️ Vue d'ensemble des fichiers
+

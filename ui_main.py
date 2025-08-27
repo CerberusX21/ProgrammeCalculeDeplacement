@@ -5,6 +5,15 @@ from pages.tassement.page_tassement import TassementPage
 from style import APP_STYLE
 
 class Window(QWidget):
+    """Fenêtre principale de l'application.
+
+    Contient deux onglets principaux :
+    - Conductivité hydraulique (Picard et al., 2026)
+    - Consolidation au dégel (Nazeri et al., 2026)
+
+    Applique la feuille de style globale et synchronise certaines entrées
+    entre les deux pages pour un flux de travail fluide.
+    """
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Soil Analysis Tool")

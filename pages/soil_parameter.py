@@ -84,7 +84,7 @@ QLineEdit[custom="true"] {
 """
 
 def init_unit_mappings(self):
-    """Initialize the unit mappings that are common to both pages"""
+    """Initialise les correspondances d'unités communes aux deux pages."""
     self.type_unit_mapping = {
         self.type_sol: {"Clay content": ["%"], "Liquid limit": ["%"], "Fine fraction median diameter": ["mm"]},
         self.pores_sol: {"Initial water content": ["kg/kg"], "Frozen bulk density": ["kg/m³", "g/cm³"], "Frozen void ratio": ["-"]},
@@ -94,7 +94,7 @@ def init_unit_mappings(self):
 
 
 def init_input_limits(self):
-    """Initialize the input limits that are common to both pages"""
+    """Initialise les bornes de validation des entrées communes aux deux pages."""
     self.input_limits = {
         self.type_sol_unit: {"%": (1, 100), "mm": (0.001, 0.1)},
         self.pores_sol_unit: {
@@ -109,6 +109,7 @@ def init_input_limits(self):
 
 
 def assemble_hydro_layout(self):
+    """Construit la mise en page compacte (paramètres à gauche, résultats à droite)."""
     # Apply compact styling
     self.setStyleSheet(COMPACT_STYLE)
     
@@ -237,6 +238,7 @@ def assemble_hydro_layout(self):
     self.setLayout(main_layout)
 
 def _setup_custom_results(self):
+    """Crée et insère la section de résultats personnalisés (ei*, Cc*, Ck*, type)."""
     # Create the custom results group
     self.results_group = ModernGroupBox("")  # Empty title for consistency
     results_layout = QVBoxLayout()
