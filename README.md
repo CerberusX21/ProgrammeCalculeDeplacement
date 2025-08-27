@@ -23,3 +23,4 @@ L’exécutable sera disponible dans le dossier dist/ :
 
 ## 🗺️ Vue d'ensemble des fichiers
 
+![Dependencies graph](docs/deps.svg)
